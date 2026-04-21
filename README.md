@@ -1,6 +1,6 @@
-# Bitunix BD Prospector
+# Prospector
 
-KOL outreach tool for Bitunix exchange — powered by Perplexity Sonar with real-time web search.
+KOL outreach tool — powered by Perplexity Sonar with real-time web search.
 
 ## Setup
 
