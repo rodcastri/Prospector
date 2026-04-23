@@ -670,22 +670,41 @@ async function runSearch(batch){
 }
 
 async function doSearch(cats,mkts){
-  var cn=CATS.filter(function(c){return cats.indexOf(c.key)>=0;}).map(function(c){return c.name;}).join(', ');
-  var megaEx=cats.indexOf('mega')>=0?'\nSearch for big global crypto KOLs: Coin Bureau, InvestAnswers, Altcoin Daily, Lark Davis, BitBoy, Crypto Banter, Benjamin Cowen.\n':'';
-  var prompt='Search the web RIGHT NOW for real, active crypto KOLs and partners for Bitunix (crypto futures exchange, up to 80% commission, $22K USD/month average for top partners).\n\n'
-    +'TYPE: '+cn+megaEx+'\n'
-    +'MARKETS: '+mkts.join(', ')+'\n'
-    +'EXCLUDE audiences mainly from: '+EXCL.join(', ')+'\n\n'
-    +'Find 8 REAL prospects active today. Check if they have deals with Binance, Bybit, or OKX.\n\n'
-    +'Return ONLY a JSON array:\n'
-    +'[{"name":"","handle":"","platform":"YouTube|Twitter/X|Telegram|Instagram|TikTok|Discord","market":"","tier":1,"followers":"","engagement":"","niche":"","email":null,"hasExistingDeal":false,"currentExchange":null,"isGlobalBig":false,"reason":"","category":""}]';
+  var cn=CATS.filter(function(c){return cats.indexOf(c.key)>=0;}).map(function(c){return c.name;});
+  var ra=document.getElementById('rarea');
   try{
-    var txt=await callAPI('search',{prompt:prompt});
-    txt=txt.trim().replace(/```json?\n?/g,'').replace(/```/g,'').trim();
-    var s=txt.indexOf('['),e=txt.lastIndexOf(']');
-    if(s<0||e<0)return[];
-    return JSON.parse(txt.slice(s,e+1));
-  }catch(err){console.error('doSearch:',err.message);return[];}
+    var resp=await fetch(API_BASE+'/api/search',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({cats:cn,mkts:mkts})
+    });
+    var data=await resp.json();
+
+    // Show any error from server in the UI
+    if(data.error){
+      var errMsg='ERROR DEL SERVIDOR: '+data.error;
+      if(data.raw)errMsg+='\n\nRespuesta de Groq: '+data.raw;
+      if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--rdim);border:1px solid rgba(248,113,113,0.3);border-radius:var(--r2);font-size:13px;color:var(--red);white-space:pre-wrap;">'+errMsg+'</div>';
+      return[];
+    }
+
+    if(!resp.ok){
+      if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--rdim);border:1px solid rgba(248,113,113,0.3);border-radius:var(--r2);font-size:13px;color:var(--red);">HTTP Error '+resp.status+': '+JSON.stringify(data)+'</div>';
+      return[];
+    }
+
+    if(!data.results||!data.results.length){
+      if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--adim);border:1px solid rgba(251,191,36,0.3);border-radius:var(--r2);font-size:13px;color:var(--amber);">Groq no devolvio resultados. Intenta de nuevo — compound-beta a veces tarda.</div>';
+      return[];
+    }
+
+    console.log('Encontrados:',data.results.length,'prospectos');
+    return data.results;
+
+  }catch(err){
+    if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--rdim);border:1px solid rgba(248,113,113,0.3);border-radius:var(--r2);font-size:13px;color:var(--red);">Error de conexion: '+err.message+'</div>';
+    return[];
+  }
 }
 
 function renderR(kols){
