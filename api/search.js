@@ -6,83 +6,72 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const key = process.env.GROQ_API_KEY;
-  if (!key) return res.status(500).json({ error: 'NO_API_KEY: GROQ_API_KEY not set in Vercel environment variables' });
+  if (!key) return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
 
   const { cats, mkts } = req.body || {};
-  if (!cats || !mkts) return res.status(400).json({ error: 'MISSING_PARAMS: cats and mkts required' });
 
-  const prompt = `You are a crypto business development expert. List 8 REAL crypto influencers for Bitunix futures exchange.
+  // Simple direct prompt - no complex formatting
+  const prompt = `List 8 real crypto influencers for ${(mkts||['global']).join(', ')} markets.
+Type: ${(cats||['KOLs']).join(', ')}
+Exclude: Canada, China, Hong Kong, Singapore, Iran, Cuba, North Korea
 
-PARTNER TYPE: ${cats.join(', ')}
-MARKETS: ${mkts.join(', ')}
-EXCLUDE: Canada, China, Hong Kong, Singapore, Iran, Cuba, North Korea, Syria, Sudan
+Return ONLY this JSON array with 8 items, no other text:
+[{"name":"Coin Bureau","handle":"@coinbureau","platform":"YouTube","market":"EE.UU.","tier":1,"followers":"2.9M","engagement":"Alto 8%","niche":"crypto education futures","email":null,"hasExistingDeal":true,"currentExchange":"OKX","isGlobalBig":true,"reason":"Top global crypto educator","category":"mega"},{"name":"example2","handle":"@example2","platform":"Twitter/X","market":"India","tier":1,"followers":"500K","engagement":"Alto 5%","niche":"crypto trading signals","email":null,"hasExistingDeal":false,"currentExchange":null,"isGlobalBig":false,"reason":"Large Indian crypto audience","category":"kols"}]
 
-Return ONLY a JSON array. Start with [ end with ]. No text outside the array:
-[{"name":"Coin Bureau","handle":"@coinbureau","platform":"YouTube","market":"EE.UU.","tier":1,"followers":"2.9M","engagement":"Alto 8%","niche":"crypto education futures","email":null,"hasExistingDeal":true,"currentExchange":"OKX","isGlobalBig":true,"reason":"Top global crypto educator focused on futures","category":"mega"}]
-
-Generate 8 real KOLs now for markets: ${mkts.join(', ')}. JSON array only:`;
-
-  let groqResponse, groqData, rawText;
+Now generate 8 REAL ones. JSON only:`;
 
   try {
-    groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${key}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'compound-beta',
+        model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
         max_tokens: 3000
       })
     });
-  } catch (fetchErr) {
-    return res.status(500).json({ error: `FETCH_FAILED: ${fetchErr.message}` });
-  }
 
-  try {
-    groqData = await groqResponse.json();
-  } catch (parseErr) {
-    return res.status(500).json({ error: `GROQ_PARSE_FAILED: status=${groqResponse.status}` });
-  }
+    const groqData = await groqRes.json();
 
-  if (!groqResponse.ok) {
-    return res.status(groqResponse.status).json({
-      error: `GROQ_ERROR_${groqResponse.status}: ${groqData?.error?.message || JSON.stringify(groqData)}`
-    });
-  }
+    if (!groqRes.ok) {
+      return res.status(200).json({
+        results: [],
+        error: groqData.error?.message || 'Groq error ' + groqRes.status
+      });
+    }
 
-  rawText = groqData.choices?.[0]?.message?.content || '';
+    let text = groqData.choices?.[0]?.message?.content || '';
+    
+    // Clean
+    text = text.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
-  if (!rawText) {
-    return res.status(200).json({ error: 'GROQ_EMPTY_RESPONSE', results: [] });
-  }
+    const start = text.indexOf('[');
+    const end = text.lastIndexOf(']');
 
-  // Clean markdown fences
-  let cleaned = rawText.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    if (start === -1 || end === -1) {
+      return res.status(200).json({
+        results: [],
+        error: 'No JSON array in response',
+        raw: text.slice(0, 300)
+      });
+    }
 
-  // Extract JSON array
-  const start = cleaned.indexOf('[');
-  const end = cleaned.lastIndexOf(']');
+    try {
+      const results = JSON.parse(text.slice(start, end + 1));
+      return res.status(200).json({ results });
+    } catch (e) {
+      return res.status(200).json({
+        results: [],
+        error: 'JSON parse failed: ' + e.message,
+        raw: text.slice(0, 300)
+      });
+    }
 
-  if (start === -1 || end === -1) {
-    return res.status(200).json({
-      error: `NO_JSON_ARRAY_FOUND`,
-      raw: rawText.slice(0, 500),
-      results: []
-    });
-  }
-
-  try {
-    const results = JSON.parse(cleaned.slice(start, end + 1));
-    return res.status(200).json({ results, count: results.length });
-  } catch (jsonErr) {
-    return res.status(200).json({
-      error: `JSON_PARSE_FAILED: ${jsonErr.message}`,
-      raw: cleaned.slice(0, 500),
-      results: []
-    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message, results: [] });
   }
 }
