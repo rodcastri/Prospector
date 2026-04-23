@@ -5,36 +5,27 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { cats, mkts } = req.body;
-  if (!cats || !mkts) return res.status(400).json({ error: 'Missing cats or mkts' });
-
   const key = process.env.GROQ_API_KEY;
-  if (!key) return res.status(500).json({ error: 'GROQ_API_KEY not configured in Vercel environment variables' });
+  if (!key) return res.status(500).json({ error: 'NO_API_KEY: GROQ_API_KEY not set in Vercel environment variables' });
 
-  const catNames = cats.join(', ');
-  const mktNames = mkts.join(', ');
+  const { cats, mkts } = req.body || {};
+  if (!cats || !mkts) return res.status(400).json({ error: 'MISSING_PARAMS: cats and mkts required' });
 
-  const prompt = `You are a crypto business development expert with knowledge of real crypto influencers.
+  const prompt = `You are a crypto business development expert. List 8 REAL crypto influencers for Bitunix futures exchange.
 
-Find 8 REAL crypto KOLs and influencers for Bitunix futures exchange outreach.
+PARTNER TYPE: ${cats.join(', ')}
+MARKETS: ${mkts.join(', ')}
+EXCLUDE: Canada, China, Hong Kong, Singapore, Iran, Cuba, North Korea, Syria, Sudan
 
-PARTNER TYPE: ${catNames}
-TARGET MARKETS: ${mktNames}
-EXCLUDE audiences mainly from: Canada, China, Hong Kong, Singapore, North Korea, Cuba, Iran, Syria, Sudan, Libya, Yemen, Afghanistan, Iraq, Myanmar
+Return ONLY a JSON array. Start with [ end with ]. No text outside the array:
+[{"name":"Coin Bureau","handle":"@coinbureau","platform":"YouTube","market":"EE.UU.","tier":1,"followers":"2.9M","engagement":"Alto 8%","niche":"crypto education futures","email":null,"hasExistingDeal":true,"currentExchange":"OKX","isGlobalBig":true,"reason":"Top global crypto educator focused on futures","category":"mega"}]
 
-Requirements:
-- Real influencers active on Twitter/X, YouTube, or Telegram
-- Mix: some large (500K+ followers), some medium (50K-500K)  
-- Check if they currently promote Binance, Bybit, or OKX
-- Focus on futures/derivatives trading content
+Generate 8 real KOLs now for markets: ${mkts.join(', ')}. JSON array only:`;
 
-Return ONLY a valid JSON array, starting with [ and ending with ]. No text before or after:
-[{"name":"Coin Bureau","handle":"@coinbureau","platform":"YouTube","market":"EE.UU.","tier":1,"followers":"2.9M","engagement":"Alto 8%","niche":"crypto education futures","email":null,"hasExistingDeal":true,"currentExchange":"OKX","isGlobalBig":true,"reason":"Top crypto educator globally with massive futures audience","category":"mega"}]
-
-Now generate 8 real KOLs for markets: ${mktNames}, type: ${catNames}. JSON array only:`;
+  let groqResponse, groqData, rawText;
 
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${key}`,
@@ -47,24 +38,51 @@ Now generate 8 real KOLs for markets: ${mktNames}, type: ${catNames}. JSON array
         max_tokens: 3000
       })
     });
+  } catch (fetchErr) {
+    return res.status(500).json({ error: `FETCH_FAILED: ${fetchErr.message}` });
+  }
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ error: err.error?.message || `Groq error ${response.status}` });
-    }
+  try {
+    groqData = await groqResponse.json();
+  } catch (parseErr) {
+    return res.status(500).json({ error: `GROQ_PARSE_FAILED: status=${groqResponse.status}` });
+  }
 
-    const data = await response.json();
-    let text = data.choices?.[0]?.message?.content || '';
-    text = text.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  if (!groqResponse.ok) {
+    return res.status(groqResponse.status).json({
+      error: `GROQ_ERROR_${groqResponse.status}: ${groqData?.error?.message || JSON.stringify(groqData)}`
+    });
+  }
 
-    const start = text.indexOf('[');
-    const end = text.lastIndexOf(']');
-    if (start === -1 || end === -1) return res.status(200).json({ results: [] });
+  rawText = groqData.choices?.[0]?.message?.content || '';
 
-    const results = JSON.parse(text.slice(start, end + 1));
-    return res.status(200).json({ results });
+  if (!rawText) {
+    return res.status(200).json({ error: 'GROQ_EMPTY_RESPONSE', results: [] });
+  }
 
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
+  // Clean markdown fences
+  let cleaned = rawText.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+  // Extract JSON array
+  const start = cleaned.indexOf('[');
+  const end = cleaned.lastIndexOf(']');
+
+  if (start === -1 || end === -1) {
+    return res.status(200).json({
+      error: `NO_JSON_ARRAY_FOUND`,
+      raw: rawText.slice(0, 500),
+      results: []
+    });
+  }
+
+  try {
+    const results = JSON.parse(cleaned.slice(start, end + 1));
+    return res.status(200).json({ results, count: results.length });
+  } catch (jsonErr) {
+    return res.status(200).json({
+      error: `JSON_PARSE_FAILED: ${jsonErr.message}`,
+      raw: cleaned.slice(0, 500),
+      results: []
+    });
   }
 }
