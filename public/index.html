@@ -745,19 +745,13 @@ async function genEml(idx,kol){
   var c=document.getElementById('ec'+idx);if(!c)return;
   c.innerHTML='<div class="ldst" style="padding:1rem;"><span class="spin"></span>Redactando...</div>';
   var isRe=kol&&kol.hasExistingDeal;
-  var mkt=(kol&&kol.market)||'';
-  var lang=mkt.indexOf('Brasil')>=0?'portugues':mkt.toLowerCase().indexOf('turqu')>=0?'ingles con apertura en turco':'ingles';
-  var prompt=isRe
-    ?'Email renegociacion BD Bitunix. '+kol.name+', '+kol.platform+', '+kol.followers+', '+mkt+'. Exchange: '+(kol.currentExchange||'competidor')+'. REGLAS: NO porcentaje exacto, usar "condiciones muy por encima del mercado". Reconocer acuerdo con respeto. $22K USD/mes promedio socios similares. Call 15 min. Max 150 palabras. Idioma: '+lang+'. Solo JSON: {"subject":"...","body":"..."}'
-    :'Email primer contacto BD Bitunix. '+((kol&&kol.name)||'')+', '+((kol&&kol.platform)||'')+', '+((kol&&kol.followers)||'')+', '+mkt+', nicho: '+((kol&&kol.niche)||'')+'. REGLAS: NO porcentaje exacto, usar "condiciones muy por encima del mercado". Apertura personalizada. Copy trading futuros, 200x leverage, $22K USD/mes, 18K afiliados. Call 20 min. Max 140 palabras. Idioma: '+lang+'. Solo JSON: {"subject":"...","body":"..."}';
   try{
-    var txt=await callAPI('email',{prompt:prompt});
-    var clean=txt.replace(/```json?|```/g,'').trim();
-    var s=clean.indexOf('{'),e=clean.lastIndexOf('}');
-    var em=JSON.parse(clean.slice(s,e+1));
+    var r=await fetch(API_BASE+'/api/email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kol:kol,type:isRe?'re':'first'})});
+    var em=await r.json();
+    if(em.error)throw new Error(em.error);
     EMAILS[idx]={subject:em.subject,body:em.body,kol:kol};
     c.innerHTML='<div class="epan">'
-      +'<div class="eplbl">'+(isRe?'RENEGOCIACION':'PRIMER CONTACTO')+'</div>'
+      +'<div class="eplbl">'+(isRe?'RENEGOCIACION':'PRIMER CONTACTO')+(em.language?' · '+em.language.toUpperCase():'')+(em.detectedLanguage?' · '+em.detectedLanguage.toUpperCase():'')+'</div>'
       +'<div class="epsb">'+em.subject+'</div>'
       +'<div class="epbdy">'+em.body+'</div>'
       +'<div class="epact">'
@@ -804,6 +798,8 @@ function rdPipe(){
         +'<div style="min-width:0;"><div class="pcn">'+(p.name||'')+'</div><div class="pcm">'+(p.platform||'')+' '+(p.followers||'')+'</div></div></div>'
         +(p.hasExistingDeal?'<span style="font-size:9px;padding:2px 6px;border-radius:99px;background:var(--adim);color:var(--amber);display:inline-block;margin-bottom:5px;">'+(p.currentExchange||'Deal')+'</span>':'')
         +'<select class="pcsel" onchange="updSt('+gi+',this.value)" style="width:100%;background:var(--s3);border:1px solid var(--border);color:var(--text);">'+opts+'</select>'
+        +(p.contactedAt?'<div style="font-size:9px;color:var(--dim);margin-top:5px;font-family:monospace;">Contactado: '+p.contactedAt+'</div>':'')
+        +(p.repliedAt?'<div style="font-size:9px;color:var(--amber);margin-top:1px;font-family:monospace;">Respondio: '+p.repliedAt+'</div>':'')
         +'<button onclick="analyzeReply('+gi+')" style="width:100%;margin-top:5px;padding:4px;background:var(--gdim);border:1px solid rgba(127,255,106,0.15);border-radius:5px;color:var(--green);font-size:9px;cursor:pointer;">Analizar respuesta IA</button>'
         +'</div>';
     });}
@@ -811,7 +807,15 @@ function rdPipe(){
   }).join('');
 }
 
-function updSt(i,v){S.pipe[i].status=v;S.save();rdPipe();rdDash();}
+function updSt(i,v){
+  S.pipe[i].status=v;
+  var today=new Date().toLocaleDateString('es-CO');
+  if(v==='contacted'&&!S.pipe[i].contactedAt)S.pipe[i].contactedAt=today;
+  if(v==='replied'&&!S.pipe[i].repliedAt)S.pipe[i].repliedAt=today;
+  if(v==='negotiating'&&!S.pipe[i].negotiatingAt)S.pipe[i].negotiatingAt=today;
+  if(v==='closed'&&!S.pipe[i].closedAt)S.pipe[i].closedAt=today;
+  S.save();rdPipe();rdDash();
+}
 
 function expCSV(){
   if(!S.pipe.length){alert('No hay datos en el pipeline.');return;}
@@ -871,14 +875,11 @@ async function bldPitch(){
   var exch=document.getElementById('pexch').value.trim();
   var pout=document.getElementById('pout');
   if(pout)pout.innerHTML='<div class="ldst"><span class="spin"></span>Generando pitch...</div>';
-  var prompt=hasEx
-    ?'Email renegociacion BD Bitunix. '+name+', '+plat+', '+fol+', '+country+', nicho: '+niche+'. Exchange: '+(exch||'competidor')+'. NO porcentaje exacto - "condiciones muy por encima del mercado". Reconocer acuerdo. $22K USD/mes. Call 15 min. Max 160 palabras. Idioma: '+lang+'. Solo JSON: {"subject":"...","body":"..."}'
-    :'Email primer contacto BD Bitunix. '+name+', '+plat+', '+fol+', '+country+', nicho: '+niche+'. NO porcentaje exacto - "condiciones muy por encima del mercado". Apertura personalizada. Copy trading futuros, 200x, $22K USD/mes, 18K afiliados. Call 20 min. Max 140 palabras. Idioma: '+lang+'. Solo JSON: {"subject":"...","body":"..."}';
+  var kolObj={name:name,platform:plat,followers:fol,niche:niche,market:country,hasExistingDeal:hasEx,currentExchange:exch||null};
   try{
-    var txt=await callAPI('email',{prompt:prompt});
-    var clean=txt.replace(/```json?|```/g,'').trim();
-    var s=clean.indexOf('{'),e=clean.lastIndexOf('}');
-    var em=JSON.parse(clean.slice(s,e+1));
+    var r2=await fetch(API_BASE+'/api/email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kol:kolObj,type:hasEx?'re':'first'})});
+    var em=await r2.json();
+    if(em.error)throw new Error(em.error);
     if(pout)pout.innerHTML=
       '<div style="font-size:9px;letter-spacing:0.1em;color:var(--green);margin-bottom:8px;">'+(hasEx?'RENEGOCIACION':'PRIMER CONTACTO')+' - '+lang.toUpperCase()+'</div>'
       +'<div style="font-size:13px;font-weight:600;padding:10px;background:var(--s2);border-radius:var(--r);margin-bottom:10px;border-left:2px solid var(--green);">'+em.subject+'</div>'
@@ -927,11 +928,12 @@ async function analyzeReply(idx){
   var replyText=window.prompt('Pega la respuesta del KOL aqui:','');
   if(!replyText||replyText.trim().length<5)return;
   var overlay=document.createElement('div');
+  overlay.id='analyzeOverlay';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
   overlay.innerHTML='<div class="card" style="width:480px;max-height:80vh;overflow-y:auto;border-radius:var(--r3);">'
     +'<div style="font-size:17px;font-weight:600;margin-bottom:1rem;">'+kol.name+'</div>'
     +'<div id="ai-analysis"><span class="spin"></span>Analizando con IA...</div>'
-    +'<button onclick="this.closest(\'div[style]\').remove()" style="margin-top:1.25rem;width:100%;padding:9px;background:var(--s2);border:1px solid var(--border);border-radius:99px;color:var(--muted);cursor:pointer;font-size:13px;">Cerrar</button>'
+    +'<button onclick="document.getElementById(\'scoreOverlay\').remove()" style="margin-top:1.25rem;width:100%;padding:9px;background:var(--s2);border:1px solid var(--border);border-radius:99px;color:var(--muted);cursor:pointer;font-size:13px;">Cerrar</button>'
     +'</div>';
   document.body.appendChild(overlay);
   try{
@@ -949,12 +951,13 @@ async function analyzeReply(idx){
 async function scoreAll(){
   if(!S.pipe.length){alert('No hay prospectos en el pipeline.');return;}
   var overlay=document.createElement('div');
+  overlay.id='scoreOverlay';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
   overlay.innerHTML='<div class="card" style="width:560px;max-height:80vh;overflow-y:auto;border-radius:var(--r3);">'
     +'<div style="font-size:17px;font-weight:600;margin-bottom:4px;">Scoring IA</div>'
     +'<div style="font-size:12px;color:var(--muted);margin-bottom:1.25rem;">'+S.pipe.length+' prospectos analizados</div>'
     +'<div id="score-list"><span class="spin"></span>Analizando...</div>'
-    +'<button onclick="this.closest(\'div[style]\').remove()" style="margin-top:1.25rem;width:100%;padding:9px;background:var(--s2);border:1px solid var(--border);border-radius:99px;color:var(--muted);cursor:pointer;font-size:13px;">Cerrar</button>'
+    +'<button onclick="document.getElementById(\'scoreOverlay\').remove()" style="margin-top:1.25rem;width:100%;padding:9px;background:var(--s2);border:1px solid var(--border);border-radius:99px;color:var(--muted);cursor:pointer;font-size:13px;">Cerrar</button>'
     +'</div>';
   document.body.appendChild(overlay);
   try{
