@@ -670,39 +670,36 @@ async function runSearch(batch){
 }
 
 async function doSearch(cats,mkts){
-  var cn=CATS.filter(function(c){return cats.indexOf(c.key)>=0;}).map(function(c){return c.name;});
   var ra=document.getElementById('rarea');
+  // cats here are keys like ['kols','mega'] - convert to names
+  var catNames=CATS.filter(function(c){return cats.indexOf(c.key)>=0;}).map(function(c){return c.name;});
+  // If no match found, just use all categories
+  if(!catNames.length)catNames=CATS.map(function(c){return c.name;});
+  
   try{
     var resp=await fetch(API_BASE+'/api/search',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({cats:cn,mkts:mkts})
+      body:JSON.stringify({cats:catNames,mkts:mkts})
     });
+    
     var data=await resp.json();
 
-    // Show any error from server in the UI
-    if(data.error){
-      var errMsg='ERROR DEL SERVIDOR: '+data.error;
-      if(data.raw)errMsg+='\n\nRespuesta de Groq: '+data.raw;
-      if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--rdim);border:1px solid rgba(248,113,113,0.3);border-radius:var(--r2);font-size:13px;color:var(--red);white-space:pre-wrap;">'+errMsg+'</div>';
-      return[];
-    }
-
-    if(!resp.ok){
-      if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--rdim);border:1px solid rgba(248,113,113,0.3);border-radius:var(--r2);font-size:13px;color:var(--red);">HTTP Error '+resp.status+': '+JSON.stringify(data)+'</div>';
+    if(!resp.ok||data.error){
+      var msg=data.error||'Error HTTP '+resp.status;
+      if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--rdim);border:1px solid rgba(248,113,113,0.3);border-radius:var(--r2);font-size:13px;color:var(--red);">'+msg+(data.raw?'<br><br>Detalle: '+data.raw:'')+'</div>';
       return[];
     }
 
     if(!data.results||!data.results.length){
-      if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--adim);border:1px solid rgba(251,191,36,0.3);border-radius:var(--r2);font-size:13px;color:var(--amber);">Groq no devolvio resultados. Intenta de nuevo — compound-beta a veces tarda.</div>';
+      if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--adim);border:1px solid rgba(251,191,36,0.3);border-radius:var(--r2);font-size:13px;color:var(--amber);">Groq no devolvio resultados. Intenta de nuevo.</div>';
       return[];
     }
 
-    console.log('Encontrados:',data.results.length,'prospectos');
     return data.results;
 
   }catch(err){
-    if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--rdim);border:1px solid rgba(248,113,113,0.3);border-radius:var(--r2);font-size:13px;color:var(--red);">Error de conexion: '+err.message+'</div>';
+    if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--rdim);border:1px solid rgba(248,113,113,0.3);border-radius:var(--r2);font-size:13px;color:var(--red);">Error: '+err.message+'</div>';
     return[];
   }
 }
