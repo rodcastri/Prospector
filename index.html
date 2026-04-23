@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Bitunix BD Prospector</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#09090f;--s1:#111118;--s2:#18181f;--s3:#1e1e28;
+  --border:rgba(255,255,255,0.07);--b2:rgba(255,255,255,0.12);
+  --text:#eeeef5;--muted:rgba(238,238,245,0.5);--dim:rgba(238,238,245,0.25);
+  --green:#7fff6a;--gfg:#050505;--gdim:rgba(127,255,106,0.1);
+  --gold:#d4a847;--goldim:rgba(212,168,71,0.12);
+  --blue:#60a5fa;--bdim:rgba(96,165,250,0.1);
+  --amber:#fbbf24;--adim:rgba(251,191,36,0.1);
+  --red:#f87171;--rdim:rgba(248,113,113,0.1);
+  --r:8px;--r2:12px;--r3:18px;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+.mono{font-family:'JetBrains Mono',monospace;}
+
+/* Layout */
+.shell{display:flex;min-height:100vh;}
+.sidebar{width:220px;background:var(--s1);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;z-index:100;}
+.main{margin-left:220px;flex:1;padding:2rem;}
+
+/* Sidebar */
+.sb-top{padding:1.25rem 1rem;border-bottom:1px solid var(--border);}
+.brand{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);}
+.brand-sub{font-size:9px;letter-spacing:0.12em;color:var(--dim);margin-top:3px;}
+.nav-sec{padding:1rem 1rem 0.3rem;font-size:9px;letter-spacing:0.12em;color:var(--dim);}
+.nb{display:flex;align-items:center;gap:8px;margin:1px 6px;padding:8px 10px;border-radius:var(--r);font-size:13px;color:var(--muted);cursor:pointer;border:none;background:none;width:calc(100% - 12px);text-align:left;font-family:'Inter',sans-serif;transition:all 0.15s;}
+.nb:hover{background:var(--s2);color:var(--text);}
+.nb.active{background:var(--gdim);color:var(--green);border:1px solid rgba(127,255,106,0.15);}
+.nb-icon{font-size:14px;width:16px;text-align:center;flex-shrink:0;}
+.sb-bot{margin-top:auto;padding:1rem;border-top:1px solid var(--border);}
+.api-st{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);}
+.api-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.reset-btn{margin-top:6px;font-size:10px;color:var(--dim);background:none;border:none;cursor:pointer;font-family:'JetBrains Mono',monospace;}
+.reset-btn:hover{color:var(--muted);}
+
+/* Pages */
+.page{display:none;animation:fi 0.2s ease;}
+.page.active{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+.ph{margin-bottom:1.75rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border);}
+.ph-eye{font-size:9px;letter-spacing:0.14em;color:var(--green);margin-bottom:5px;}
+.ph-title{font-size:26px;font-weight:700;letter-spacing:-0.02em;margin-bottom:4px;}
+.ph-sub{font-size:13px;color:var(--muted);}
+
+/* Cards */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r2);padding:1.25rem;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.75rem;}
+.sc{border-radius:var(--r2);padding:1.25rem 1.5rem;position:relative;overflow:hidden;}
+.sc::after{content:'';position:absolute;bottom:0;left:10%;right:10%;height:1px;}
+.sc.g::after{background:linear-gradient(90deg,transparent,var(--green),transparent);}
+.sc.go::after{background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.sc.b::after{background:linear-gradient(90deg,transparent,var(--blue),transparent);}
+.sc.a::after{background:linear-gradient(90deg,transparent,var(--amber),transparent);}
+.sv{font-size:30px;font-weight:700;letter-spacing:-0.03em;line-height:1;margin-bottom:4px;}
+.sl2{font-size:11px;color:var(--muted);}
+
+/* Buttons */
+.btn{padding:8px 16px;border-radius:99px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;}
+.bg{background:var(--green);color:var(--gfg);}
+.bg:hover{filter:brightness(1.07);}
+.bg:disabled{opacity:0.35;cursor:not-allowed;}
+.bgh{background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid var(--border);}
+.bgh:hover{background:rgba(255,255,255,0.09);color:var(--text);}
+.bbl{background:var(--bdim);color:var(--blue);border:1px solid rgba(96,165,250,0.2);}
+.bam{background:var(--adim);color:var(--amber);border:1px solid rgba(251,191,36,0.2);}
+
+/* Inputs */
+input,select,textarea{padding:9px 12px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:13px;font-family:'Inter',sans-serif;transition:border-color 0.2s;width:100%;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:rgba(127,255,106,0.3);}
+select option{background:var(--s2);}
+
+/* Calendar */
+.cal-week{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.25rem;}
+.cal-day{background:var(--s1);border:1px solid var(--border);border-radius:var(--r2);padding:1rem;cursor:pointer;transition:all 0.15s;}
+.cal-day:hover{border-color:var(--b2);}
+.cal-day.active{border-color:rgba(127,255,106,0.3);background:var(--gdim);}
+.cal-lbl{font-size:9px;letter-spacing:0.1em;color:var(--dim);margin-bottom:3px;}
+.cal-nm{font-size:15px;font-weight:600;margin-bottom:7px;}
+.cal-tags{display:flex;flex-direction:column;gap:3px;}
+.ctag{font-size:9px;padding:2px 7px;border-radius:99px;border:1px solid;display:inline-block;width:fit-content;}
+.ct-s{background:rgba(127,255,106,0.08);border-color:rgba(127,255,106,0.2);color:var(--green);}
+.ct-e{background:var(--bdim);border-color:rgba(96,165,250,0.2);color:var(--blue);}
+.ct-f{background:var(--adim);border-color:rgba(251,191,36,0.2);color:var(--amber);}
+.ct-r{background:var(--goldim);border-color:rgba(212,168,71,0.2);color:var(--gold);}
+
+/* Checklist */
+.chklist{display:flex;flex-direction:column;gap:7px;margin-top:10px;}
+.chi{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:var(--r);background:var(--s2);border:1px solid var(--border);cursor:pointer;transition:all 0.15s;}
+.chi:hover{border-color:var(--b2);}
+.chi.done{opacity:0.45;}
+.chb{width:17px;height:17px;border-radius:5px;border:1.5px solid var(--border);background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all 0.15s;}
+.chi.done .chb{background:var(--green);border-color:var(--green);}
+.chic{font-size:10px;color:var(--gfg);}
+.cht{font-size:13px;font-weight:500;margin-bottom:2px;}
+.chi.done .cht{text-decoration:line-through;color:var(--muted);}
+.chd{font-size:11px;color:var(--muted);line-height:1.5;}
+.chtm{font-size:10px;color:var(--green);margin-top:4px;}
+.pbar{width:100px;height:4px;background:rgba(255,255,255,0.07);border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:6px;}
+.pbf{height:100%;background:var(--green);border-radius:99px;transition:width 0.4s ease;}
+.done-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(127,255,106,0.12);border:1px solid rgba(127,255,106,0.3);color:var(--green);font-size:10px;font-weight:700;padding:2px 9px;border-radius:99px;letter-spacing:0.06em;}
+
+/* Prospector */
+.pbox{background:var(--s1);border:1px solid var(--border);border-radius:var(--r2);padding:1.5rem;margin-bottom:1.25rem;}
+.auto-banner{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--gdim);border:1px solid rgba(127,255,106,0.15);border-radius:var(--r);margin-bottom:1.25rem;}
+.auto-pill{background:var(--green);color:var(--gfg);font-size:9px;font-weight:700;padding:3px 8px;border-radius:99px;letter-spacing:0.06em;flex-shrink:0;}
+.sl{font-size:9px;letter-spacing:0.12em;color:var(--dim);margin-bottom:8px;}
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:1.25rem;}
+.cch{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:10px;cursor:pointer;text-align:center;transition:all 0.15s;}
+.cch:hover{border-color:var(--b2);}
+.cch.on{border-color:rgba(127,255,106,0.3);background:var(--gdim);}
+.cico{font-size:20px;margin-bottom:4px;}
+.cnme{font-size:10px;color:var(--muted);}
+.cch.on .cnme{color:var(--green);}
+.mwrap{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:1.25rem;}
+.mp{font-size:10px;padding:4px 11px;border-radius:99px;border:1px solid var(--border);background:var(--s2);color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.mp:hover{border-color:var(--b2);}
+.mp.on{border-color:rgba(127,255,106,0.3);color:var(--green);background:var(--gdim);}
+.mp.t1{border-color:rgba(52,211,153,0.2);color:rgba(52,211,153,0.7);}
+.mp.t1.on{background:rgba(52,211,153,0.08);color:hsl(160,60%,70%);border-color:rgba(52,211,153,0.4);}
+.sacts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.bprog{padding:12px 14px;background:var(--gdim);border:1px solid rgba(127,255,106,0.15);border-radius:var(--r);font-size:12px;color:var(--green);display:none;margin:10px 0;}
+
+/* KOL cards */
+.klist{display:flex;flex-direction:column;gap:9px;}
+.kcard{background:var(--s1);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;transition:all 0.15s;}
+.kcard:hover{border-color:var(--b2);}
+.kin{padding:1.25rem;}
+.ktop{display:flex;align-items:flex-start;gap:11px;margin-bottom:10px;}
+.kav{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;border:1px solid rgba(255,255,255,0.09);}
+.kinf{flex:1;min-width:0;}
+.knm{font-size:14px;font-weight:600;margin-bottom:2px;}
+.khdl{font-size:11px;color:var(--muted);}
+.kbdgs{display:flex;gap:5px;flex-wrap:wrap;}
+.bdg{font-size:9px;padding:2px 7px;border-radius:99px;border:1px solid;white-space:nowrap;}
+.bplt{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.09);color:var(--muted);}
+.bt1{background:rgba(52,211,153,0.08);border-color:rgba(52,211,153,0.24);color:#34d399;}
+.bt2{background:var(--bdim);border-color:rgba(96,165,250,0.24);color:var(--blue);}
+.bex{background:var(--adim);border-color:rgba(251,191,36,0.28);color:var(--amber);}
+.bgl{background:var(--goldim);border-color:rgba(212,168,71,0.28);color:var(--gold);}
+.ksts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:9px;}
+.kst{background:var(--s2);border-radius:var(--r);padding:7px 9px;border:1px solid var(--border);}
+.kstv{font-size:12px;font-weight:600;}
+.kstl{font-size:9px;color:var(--muted);margin-top:2px;letter-spacing:0.04em;text-transform:uppercase;}
+.krsn{font-size:12px;color:var(--muted);line-height:1.6;padding:9px 11px;background:var(--s2);border-radius:var(--r);border-left:2px solid var(--green);margin-bottom:9px;}
+.keml{display:flex;align-items:center;gap:7px;margin-bottom:9px;font-size:11px;}
+.kemlb{font-size:9px;color:var(--dim);letter-spacing:0.08em;}
+.epan{border-top:1px solid var(--border);padding:1.25rem;}
+.eplbl{font-size:9px;letter-spacing:0.1em;color:var(--green);margin-bottom:8px;}
+.epsb{font-size:13px;font-weight:600;margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid var(--border);}
+.epbdy{font-size:13px;color:var(--muted);line-height:1.85;white-space:pre-wrap;}
+.epact{display:flex;gap:6px;margin-top:11px;}
+
+/* Pipeline */
+.pboard{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.pcol{background:var(--s1);border:1px solid var(--border);border-radius:var(--r2);padding:1rem;min-height:200px;}
+.pchdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+.pct{font-size:10px;font-weight:600;letter-spacing:0.07em;}
+.pcc{background:var(--s2);border:1px solid var(--border);font-size:10px;color:var(--muted);padding:1px 7px;border-radius:99px;}
+.pcrds{display:flex;flex-direction:column;gap:7px;}
+.pcrd{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:9px;cursor:pointer;transition:all 0.15s;}
+.pcrd:hover{border-color:var(--b2);}
+.pcn{font-size:12px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pcm{font-size:10px;color:var(--muted);margin-bottom:5px;}
+.pcsel{font-size:11px;padding:4px 7px;border-radius:6px;margin-top:5px;}
+.ebar{display:flex;gap:8px;align-items:center;padding:11px 14px;background:var(--bdim);border:1px solid rgba(96,165,250,0.15);border-radius:var(--r);margin-bottom:1rem;}
+.rcnt{background:var(--gdim);border:1px solid rgba(127,255,106,0.15);border-radius:99px;font-size:10px;color:var(--green);padding:3px 10px;display:inline-block;margin-bottom:12px;}
+
+/* Pitch */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+.pflbl{font-size:10px;letter-spacing:0.07em;color:var(--muted);display:block;margin-bottom:5px;}
+.pff{display:flex;flex-direction:column;gap:0;}
+.pff input,.pff select{width:100%;}
+.ptog{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;}
+.ptog input{accent-color:var(--green);width:15px;height:15px;}
+.ptog label{font-size:13px;color:var(--muted);cursor:pointer;}
+.pout{background:var(--s1);border:1px solid var(--border);border-radius:var(--r2);padding:1.5rem;min-height:360px;}
+
+/* Markets */
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:1.25rem;}
+.mcard{background:var(--s1);border:1px solid var(--border);border-radius:var(--r2);padding:1.25rem;transition:all 0.15s;}
+.mcard:hover{border-color:var(--b2);}
+.mcard.t1{border-left:2px solid #34d399!important;}
+.mcard.t2{border-left:2px solid var(--blue)!important;}
+.mcard.t3{border-left:2px solid var(--amber)!important;}
+.mnm{font-size:14px;font-weight:600;margin-bottom:3px;}
+.mlg{font-size:10px;color:var(--muted);margin-bottom:7px;}
+.mtgs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px;}
+.mtg{font-size:9px;padding:2px 7px;border-radius:99px;background:var(--s2);border:1px solid var(--border);color:var(--muted);}
+.mnote{font-size:11px;color:var(--dim);line-height:1.5;}
+
+/* Utils */
+.spin{display:inline-block;width:13px;height:13px;border:1.5px solid rgba(255,255,255,0.09);border-top-color:var(--green);border-radius:50%;animation:sp 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.ldst{text-align:center;padding:3rem;color:var(--muted);font-size:13px;}
+.emst{text-align:center;padding:3rem;color:var(--dim);font-size:13px;}
+.div{height:1px;background:var(--border);margin:1.75rem 0;}
+.tcol{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+.pv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.pv-item{background:var(--s2);border-radius:var(--r);padding:13px;border:1px solid var(--border);}
+
+@media(max-width:1100px){.stats{grid-template-columns:repeat(2,1fr);}.pboard{grid-template-columns:repeat(3,1fr);}.pgrid{grid-template-columns:1fr;}.tcol{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-top">
+    <div class="brand"><div class="brand-dot"></div>BD Prospector</div>
+    <div class="brand-sub">BITUNIX · KOL OUTREACH</div>
+  </div>
+  <div class="nav-sec">PRINCIPAL</div>
+  <button class="nb active" onclick="nav('dashboard',this)"><span class="nb-icon">◈</span>Dashboard</button>
+  <button class="nb" onclick="nav('calendar',this)"><span class="nb-icon">◷</span>Calendario</button>
+  <div class="nav-sec">OUTREACH</div>
+  <button class="nb" onclick="nav('prospector',this)"><span class="nb-icon">◎</span>Prospector IA</button>
+  <button class="nb" onclick="nav('pipeline',this)"><span class="nb-icon">◫</span>Pipeline</button>
+  <button class="nb" onclick="nav('pitch',this)"><span class="nb-icon">◉</span>Pitch Builder</button>
+  <div class="nav-sec">ESTRATEGIA</div>
+  <button class="nb" onclick="nav('markets',this)"><span class="nb-icon">◬</span>Mercados</button>
+  <div class="sb-bot">
+    <div class="api-st"><div class="api-dot"></div><span>Groq conectado</span></div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <div class="ph">
+    <div class="ph-eye">PANEL PRINCIPAL</div>
+    <div class="ph-title" id="dg">Bienvenido</div>
+    <div class="ph-sub" id="dd"></div>
+  </div>
+  <div class="stats">
+    <div class="sc card go"><div class="sv" id="st">0</div><div class="sl2">PROSPECTOS</div></div>
+    <div class="sc card b"><div class="sv" id="sc2">0</div><div class="sl2">CONTACTADOS</div></div>
+    <div class="sc card a"><div class="sv" id="sr">0</div><div class="sl2">RESPONDIERON</div></div>
+    <div class="sc card g"><div class="sv" id="scl">0</div><div class="sl2">ACUERDOS</div></div>
+  </div>
+  <div class="tcol">
+    <div>
+      <div class="sl" style="margin-bottom:8px;">TAREA DE HOY</div>
+      <div class="card" id="dt-card"></div>
+    </div>
+    <div>
+      <div class="sl" style="margin-bottom:8px;">PROPUESTA DE VALOR</div>
+      <div class="pv-grid">
+        <div class="pv-item"><div style="font-size:18px;margin-bottom:6px;">💰</div><div style="font-size:13px;font-weight:600;margin-bottom:3px;">Hasta 80% comision</div><div style="font-size:11px;color:var(--muted);">Muy por encima del mercado. Diario en USDT.</div></div>
+        <div class="pv-item"><div style="font-size:18px;margin-bottom:6px;">📈</div><div style="font-size:13px;font-weight:600;margin-bottom:3px;">$22K USD/mes promedio</div><div style="font-size:11px;color:var(--muted);">Top socios. +18,000 afiliados globales.</div></div>
+        <div class="pv-item"><div style="font-size:18px;margin-bottom:6px;">🔗</div><div style="font-size:13px;font-weight:600;margin-bottom:3px;">Sub-afiliados</div><div style="font-size:11px;color:var(--muted);">Comision adicional por tu propia red.</div></div>
+        <div class="pv-item"><div style="font-size:18px;margin-bottom:6px;">⚡</div><div style="font-size:13px;font-weight:600;margin-bottom:3px;">Copy trading + 200x</div><div style="font-size:11px;color:var(--muted);">Ventaja tecnica vs Binance/Bybit.</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="div"></div>
+  <div class="sl" style="margin-bottom:10px;">MERCADOS ACTIVOS ESTA SEMANA</div>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;" id="dm"></div>
+</div>
+
+<!-- CALENDAR -->
+<div id="page-calendar" class="page">
+  <div class="ph">
+    <div class="ph-eye">PLAN SEMANAL</div>
+    <div class="ph-title">Calendario</div>
+    <div class="ph-sub">Lunes a viernes · ~90 min/dia · haz clic en un dia para ver y marcar las tareas</div>
+  </div>
+  <div class="cal-week" id="calw"></div>
+  <div class="card" id="ddet" style="margin-top:0;"></div>
+</div>
+
+<!-- PROSPECTOR -->
+<div id="page-prospector" class="page">
+  <div class="ph">
+    <div class="ph-eye">BUSQUEDA INTELIGENTE</div>
+    <div class="ph-title">Prospector IA</div>
+    <div class="ph-sub">Busqueda en tiempo real con Groq · KOLs activos hoy · detecta acuerdos existentes</div>
+  </div>
+  <div class="pbox">
+    <div class="auto-banner">
+      <span class="auto-pill">AUTO</span>
+      <span style="font-size:13px;color:var(--muted);">La IA selecciona mercado y categoria. Ajusta manualmente si quieres.</span>
+    </div>
+    <div class="sl">TIPO DE SOCIO</div>
+    <div class="cat-grid" id="cgrid"></div>
+    <div class="sl">MERCADO OBJETIVO</div>
+    <div class="mwrap" id="mwrap"></div>
+    <div class="sacts">
+      <button class="btn bg" id="bs1" onclick="runSearch(false)">Buscar (10 KOLs)</button>
+      <button class="btn bam" id="bs2" onclick="runSearch(true)">Lote ~100 KOLs</button>
+      <span style="font-size:11px;color:var(--dim);">Lote = 7 busquedas · ~3-4 min</span>
+    </div>
+  </div>
+  <div class="bprog" id="bprog"></div>
+  <div id="rarea"><div class="emst">Presiona "Buscar" para iniciar la busqueda en tiempo real</div></div>
+</div>
+
+<!-- PIPELINE -->
+<div id="page-pipeline" class="page">
+  <div class="ph">
+    <div class="ph-eye">GESTION DE PROSPECTOS</div>
+    <div class="ph-title">Pipeline</div>
+    <div class="ph-sub">Seguimiento completo desde el primer contacto hasta el acuerdo cerrado</div>
+  </div>
+  <div class="ebar">
+    <span style="font-size:12px;color:var(--muted);">Exportar para Lark / Gmail</span>
+    <button class="btn bbl" style="font-size:12px;" onclick="expCSV()">Exportar CSV</button>
+    <button class="btn bgh" style="font-size:12px;" onclick="scoreAll()">Scoring IA</button>
+    <button class="btn bgh" style="font-size:12px;" onclick="clrPipe()">Limpiar todo</button>
+  </div>
+  <div class="pboard" id="pboard"></div>
+</div>
+
+<!-- PITCH BUILDER -->
+<div id="page-pitch" class="page">
+  <div class="ph">
+    <div class="ph-eye">GENERADOR DE MENSAJES</div>
+    <div class="ph-title">Pitch Builder</div>
+    <div class="ph-sub">Emails en cualquier idioma · primer contacto y renegociacion · datos automaticos con IA</div>
+  </div>
+  <div class="pgrid">
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="card">
+        <div class="sl" style="margin-bottom:6px;">BUSCAR PROSPECTO CON IA</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input id="pn" placeholder="Nombre o canal — ej: Coin Bureau, CryptoTR..." style="flex:1;">
+          <button class="btn bbl" id="plookup" onclick="lookupProspect()" style="white-space:nowrap;flex-shrink:0;">Buscar datos</button>
+        </div>
+        <div id="plookup-status" style="font-size:11px;color:var(--muted);margin-bottom:10px;min-height:16px;"></div>
+        <div class="sl" style="margin-bottom:10px;">DATOS DEL PROSPECTO</div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div class="pff"><label class="pflbl">PLATAFORMA</label><select id="pp"><option value="">Selecciona...</option><option>YouTube</option><option>Twitter/X</option><option>Telegram</option><option>Instagram</option><option>TikTok</option><option>Discord</option><option>Reddit</option><option>Skool</option><option>Whop</option><option>LinkedIn</option></select></div>
+          <div class="pff"><label class="pflbl">SEGUIDORES</label><input id="pf" placeholder="Ej: 1.2M, 350K..."></div>
+          <div class="pff"><label class="pflbl">NICHO ESPECIFICO</label><input id="pni" placeholder="Ej: futuros BTC, senales cripto..."></div>
+          <div class="pff"><label class="pflbl">PAIS / REGION</label><input id="pco" placeholder="Ej: Turquia, India, Global..."></div>
+          <div class="pff"><label class="pflbl">IDIOMA DEL EMAIL</label><select id="pl"><option value="ingles">Ingles</option><option value="espanol">Espanol</option><option value="portugues">Portugues</option><option value="turco">Turco</option><option value="ruso">Ruso</option><option value="arabe">Arabe</option><option value="indonesio">Indonesio</option><option value="vietnamita">Vietnamita</option><option value="hindi">Hindi / Ingles</option><option value="frances">Frances</option></select></div>
+          <div class="ptog"><input type="checkbox" id="pex" onchange="document.getElementById('pexch').disabled=!this.checked"><label for="pex">Ya tiene acuerdo con otro exchange</label></div>
+          <div class="pff"><label class="pflbl">CON QUE EXCHANGE?</label><input id="pexch" placeholder="Ej: Bybit, Binance, OKX..." disabled></div>
+          <div style="display:flex;gap:8px;"><button class="btn bg" style="flex:1;" onclick="bldPitch()">Generar pitch</button><button class="btn bgh" onclick="clrPitch()">Limpiar</button></div>
+        </div>
+      </div>
+      <div id="plq"></div>
+    </div>
+    <div>
+      <div class="sl" style="margin-bottom:8px;">EMAIL GENERADO</div>
+      <div class="pout" id="pout"><div class="emst" style="padding:4rem 0;">El email aparecera aqui</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MARKETS -->
+<div id="page-markets" class="page">
+  <div class="ph">
+    <div class="ph-eye">INTELIGENCIA DE MERCADOS</div>
+    <div class="ph-title">Mercados Globales</div>
+    <div class="ph-sub">Priorizacion basada en volumen de futuros cripto · Bitunix disponible en todos excepto excluidos</div>
+  </div>
+  <div class="sl">TIER 1 — VOLUMEN MUY ALTO</div>
+  <div class="mgrid" id="mt1"></div>
+  <div class="div"></div>
+  <div class="sl">TIER 2 — VOLUMEN ALTO</div>
+  <div class="mgrid" id="mt2"></div>
+  <div class="div"></div>
+  <div class="sl">TIER 3 — EXPANSION</div>
+  <div class="mgrid" id="mt3"></div>
+  <div class="div"></div>
+  <div class="sl" style="color:var(--red);">EXCLUIDOS — BITUNIX NO OPERA AQUI</div>
+  <div id="excl" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+</div>
+
+</main>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+var DAYS=[
+  {name:'Lunes',focus:'Busqueda Tier 1',tags:['ct-s','ct-s'],lbl:['Busqueda','Calificar'],tasks:[
+    {icon:'🤖',t:'Busqueda automatica de KOLs',d:'Busca KOLs en EE.UU., Turquia, India, Vietnam y Brasil. Incluye creadores grandes como Coin Bureau, InvestAnswers.',tm:'40 MIN'},
+    {icon:'🏦',t:'Busqueda de fondos y prop firms',d:'Prop firms y fondos cripto en LinkedIn y Twitter/X. Un fondo puede traer mas volumen que 50 KOLs.',tm:'20 MIN'},
+    {icon:'📋',t:'Calificar y agregar al pipeline',d:'Revisar perfiles, descartar irrelevantes, mover los mejores al pipeline.',tm:'20 MIN'}
+  ]},
+  {name:'Martes',focus:'Outreach masivo',tags:['ct-e','ct-e'],lbl:['Emails','Envio'],tasks:[
+    {icon:'✉️',t:'Generar emails personalizados',d:'Pitch Builder genera en el idioma del prospecto. Para quienes tienen exchange: modo renegociacion sin revelar % exacto.',tm:'30 MIN'},
+    {icon:'🎯',t:'Segmentar y enviar',d:'Grupo A: primer contacto. Grupo B: renegociacion. Max 50 emails/dia.',tm:'20 MIN'},
+    {icon:'📤',t:'Registrar en pipeline',d:'Cambiar estado a Contactado. Exportar CSV para Lark.',tm:'20 MIN'}
+  ]},
+  {name:'Miercoles',focus:'Follow-up',tags:['ct-f','ct-r'],lbl:['Follow-up','Respuestas'],tasks:[
+    {icon:'🔄',t:'Segundo toque',d:'Prospectos sin respuesta en 5 dias: segundo mensaje mas corto. Max 2 toques.',tm:'25 MIN'},
+    {icon:'💬',t:'Gestionar respuestas activas',d:'Mover a Respondio. Si tienen exchange: pedir detalles. Aqui si revelas el % comision.',tm:'30 MIN'},
+    {icon:'📊',t:'Revisar metricas',d:'Que mercado responde mejor? Ajustar el enfoque de la semana.',tm:'15 MIN'}
+  ]},
+  {name:'Jueves',focus:'Busqueda Tier 2',tags:['ct-s','ct-e'],lbl:['Tier 2','Pitch'],tasks:[
+    {icon:'🌍',t:'Busqueda en mercados Tier 2',d:'Filipinas, Indonesia, Nigeria, Europa del Este, LATAM. Menos competencia, mejor tasa de respuesta.',tm:'35 MIN'},
+    {icon:'🎓',t:'Plataformas educativas',d:'Skool y Whop: instructores con comunidades activas. Un curso de 500 alumnos = 100 usuarios potenciales.',tm:'20 MIN'},
+    {icon:'📧',t:'Enviar emails del dia',d:'Generar y enviar para los mejores prospectos encontrados hoy.',tm:'15 MIN'}
+  ]},
+  {name:'Viernes',focus:'Cierre y analisis',tags:['ct-r','ct-f'],lbl:['Analisis','Cierre'],tasks:[
+    {icon:'📈',t:'Resumen semanal',d:'Total buscados, contactados, respondieron. Define el enfoque de la proxima semana.',tm:'20 MIN'},
+    {icon:'🤝',t:'Avanzar negociaciones',d:'Propuesta formal con % comision, materiales, link al dashboard. Proponer call de 20 min.',tm:'30 MIN'},
+    {icon:'🔍',t:'Caza de oportunidades',d:'KOLs con quejas sobre su exchange en Twitter/X: mejores candidatos para renegociacion.',tm:'20 MIN'}
+  ]}
+];
+
+var CATS=[
+  {icon:'📹',name:'KOLs futuros',key:'kols'},
+  {icon:'🌟',name:'KOLs globales grandes',key:'mega'},
+  {icon:'🏦',name:'Fondos cripto',key:'funds'},
+  {icon:'⚡',name:'Prop trading',key:'prop'},
+  {icon:'📡',name:'Senales',key:'signals'},
+  {icon:'🎓',name:'Educacion',key:'edu'},
+  {icon:'🔄',name:'Copy trading',key:'copy'},
+  {icon:'🌐',name:'Partnerships B2B',key:'b2b'}
+];
+
+var MKTS={
+  t1:[
+    {name:'EE.UU.',lang:'Ingles',tags:['Prop firms','Fondos','YouTube'],note:'Mayor mercado global. Coin Bureau, InvestAnswers, Altcoin Daily.'},
+    {name:'Turquia',lang:'Turco / Ingles',tags:['Futuros','KOLs','Senales'],note:'Volumen altisimo per capita. Muy receptivo a outreach en turco.'},
+    {name:'India',lang:'Ingles / Hindi',tags:['Prop firms','YouTube','Discord'],note:'Crecimiento explosivo. Jovenes traders activos en futuros.'},
+    {name:'Vietnam',lang:'Vietnamita / Ingles',tags:['KOLs','Telegram'],note:'Top 3 global en adopcion cripto. Alta tasa de respuesta.'},
+    {name:'Brasil',lang:'Portugues',tags:['YouTube','KOLs','Senales'],note:'Mayor mercado LATAM. Creadores muy activos.'},
+    {name:'Rusia / CEI',lang:'Ruso / Ingles',tags:['Fondos','Prop firms'],note:'Traders sofisticados, alto volumen en futuros perpetuos.'}
+  ],
+  t2:[
+    {name:'Argentina',lang:'Espanol',tags:['KOLs','Senales'],note:'Alta adopcion. Traders muy motivados.'},
+    {name:'Filipinas',lang:'Ingles / Filipino',tags:['YouTube','Telegram'],note:'Comunidad cripto muy activa.'},
+    {name:'Indonesia',lang:'Indonesio / Ingles',tags:['KOLs','Telegram'],note:'200M+ habitantes, mercado en auge.'},
+    {name:'Nigeria',lang:'Ingles',tags:['KOLs','Whop'],note:'Mayor mercado cripto de Africa.'},
+    {name:'Europa del Este',lang:'Ingles / Ruso',tags:['Fondos','Discord'],note:'Polonia, Ucrania, Rumania. Traders de alto nivel.'},
+    {name:'Pakistan',lang:'Urdu / Ingles',tags:['KOLs','Telegram'],note:'Crecimiento rapido, poca competencia.'}
+  ],
+  t3:[
+    {name:'LATAM general',lang:'Espanol',tags:['KOLs','YouTube'],note:'Mexico, Colombia, Chile, Peru.'},
+    {name:'MENA (sin UAE)',lang:'Arabe / Ingles',tags:['KOLs','Fondos'],note:'Egipto, Arabia, Marruecos. Sin saturacion.'},
+    {name:'Europa Occidental',lang:'Ingles / Aleman',tags:['Fondos','Prop'],note:'Alemania, Francia, Espana. Institucionales.'},
+    {name:'Tailandia',lang:'Tailandes / Ingles',tags:['KOLs','Futuros'],note:'Adopcion rapida, comunidad organizada.'}
+  ]
+};
+
+var EXCL=['Canada','China','Hong Kong','Singapur','Corea del Norte','Cuba','Iran','Siria','Sudan','Libia','Yemen','Afganistan','Iraq','Myanmar'];
+
+var STS=[
+  {key:'new',label:'NUEVO',color:'var(--muted)'},
+  {key:'contacted',label:'CONTACTADO',color:'var(--blue)'},
+  {key:'replied',label:'RESPONDIO',color:'var(--amber)'},
+  {key:'negotiating',label:'NEGOCIANDO',color:'var(--gold)'},
+  {key:'closed',label:'CERRADO',color:'var(--green)'}
+];
+
+var AVC=[
+  ['rgba(212,168,71,0.2)','#d4a847'],
+  ['rgba(127,255,106,0.18)','#7fff6a'],
+  ['rgba(96,165,250,0.18)','#60a5fa'],
+  ['rgba(251,191,36,0.18)','#fbbf24'],
+  ['rgba(167,139,250,0.18)','#a78bfa'],
+  ['rgba(248,113,113,0.18)','#f87171']
+];
+
+var BATCH=[
+  {cats:['kols','mega'],mkts:['EE.UU.','Turquia'],lbl:'KOLs grandes - EE.UU. + Turquia'},
+  {cats:['kols','signals'],mkts:['India','Vietnam'],lbl:'KOLs futuros - India + Vietnam'},
+  {cats:['funds','prop'],mkts:['EE.UU.','Rusia / CEI'],lbl:'Fondos + Prop - Rusia + EE.UU.'},
+  {cats:['edu','copy'],mkts:['Brasil','Argentina'],lbl:'Educacion + Copy - LATAM'},
+  {cats:['kols','signals'],mkts:['Filipinas','Indonesia'],lbl:'KOLs - Asia Pacifico'},
+  {cats:['b2b','funds'],mkts:['Europa del Este','Europa Occidental'],lbl:'B2B - Europa'},
+  {cats:['kols','mega'],mkts:['Nigeria','Pakistan'],lbl:'KOLs globales - Africa + Pakistan'}
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+var S={
+  pipe:JSON.parse(localStorage.getItem('bx_p')||'[]'),
+  chk:JSON.parse(localStorage.getItem('bx_c')||'{}'),
+  save:function(){localStorage.setItem('bx_p',JSON.stringify(this.pipe));},
+  sc:function(){localStorage.setItem('bx_c',JSON.stringify(this.chk));}
+};
+var EMAILS={};
+var allR=[];
+var API_BASE=window.location.origin;
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function callAPI(ep,body){
+  var res=await fetch(API_BASE+'/api/'+ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  var data=await res.json();
+  if(!res.ok)throw new Error(data.error||'Error '+res.status);
+  return data.text||'';
+}
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+window.onload=function(){
+  var now=new Date(),h=now.getHours();
+  var g=h<12?'Buenos dias':h<19?'Buenas tardes':'Buenas noches';
+  document.getElementById('dg').textContent=g+'!';
+  document.getElementById('dd').textContent=now.toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  buildCal();buildCats();buildMkts();buildMarkets();buildExcl();
+  rdDash();rdPipe();rdPlq();
+  var di=Math.min(Math.max(now.getDay()-1,0),4);
+  selectDay(di);
+};
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+function nav(page,el){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nb').forEach(function(n){n.classList.remove('active');});
+  var pg=document.getElementById('page-'+page);
+  if(pg)pg.classList.add('active');
+  if(el)el.classList.add('active');
+  if(page==='pipeline')rdPipe();
+  if(page==='dashboard')rdDash();
+  if(page==='pitch')rdPlq();
+}
+
+// ── PROGRESS ──────────────────────────────────────────────────────────────────
+function prog(done,total){
+  if(done>=total&&total>0)return '<span class="done-badge">COMPLETADO</span>';
+  var pct=total>0?Math.round(done/total*100):0;
+  return '<span class="mono" style="font-size:11px;color:var(--green);display:inline-flex;align-items:center;gap:6px;"><span class="pbar"><span class="pbf" style="width:'+pct+'%"></span></span>'+done+'/'+total+'</span>';
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function rdDash(){
+  document.getElementById('st').textContent=S.pipe.length;
+  document.getElementById('sc2').textContent=S.pipe.filter(function(p){return p.status!=='new';}).length;
+  document.getElementById('sr').textContent=S.pipe.filter(function(p){return p.status==='replied'||p.status==='negotiating';}).length;
+  document.getElementById('scl').textContent=S.pipe.filter(function(p){return p.status==='closed';}).length;
+
+  var di=Math.min(Math.max(new Date().getDay()-1,0),4);
+  var d=DAYS[di];
+  var key='d'+di+'_'+new Date().toDateString();
+  var chk=S.chk[key]||{};
+  var done=d.tasks.filter(function(_,i){return chk[i];}).length;
+  var totalMin=d.tasks.reduce(function(s,t){return s+parseInt(t.tm);},0);
+  var th='';
+  d.tasks.forEach(function(t,i){
+    th+='<div class="chi'+(chk[i]?' done':'')+'" onclick="tgDash('+di+','+i+')" style="margin-bottom:0;">'
+      +'<div class="chb">'+(chk[i]?'<span class="chic">✓</span>':'')+'</div>'
+      +'<div class="chbd" style="flex:1;"><div class="cht">'+t.t+'</div><div class="chtm">'+t.tm+'</div></div>'
+      +'</div>';
+  });
+  var card=document.getElementById('dt-card');
+  if(card)card.innerHTML=
+    '<div style="font-size:9px;letter-spacing:0.12em;color:var(--green);margin-bottom:5px;">'+d.name.toUpperCase()+' - '+d.focus.toUpperCase()+'</div>'
+    +'<div style="font-size:16px;font-weight:600;margin-bottom:8px;">Tu plan de hoy</div>'
+    +'<div style="font-size:11px;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:10px;"><span>~'+totalMin+' min</span>'+prog(done,d.tasks.length)+'</div>'
+    +'<div class="chklist" style="gap:6px;">'+th+'</div>'
+    +'<div style="margin-top:1rem;"><button class="btn bg" style="font-size:12px;" onclick="nav(\'prospector\',document.querySelectorAll(\'.nb\')[3])">Abrir Prospector</button></div>';
+
+  var dm=document.getElementById('dm');
+  if(dm){
+    dm.innerHTML=['EE.UU.','Turquia','India','Vietnam','Brasil'].map(function(m){
+      return '<div style="background:var(--s1);border:1px solid rgba(127,255,106,0.2);border-left:2px solid var(--green);border-radius:var(--r);padding:10px 12px;">'
+        +'<div style="font-size:12px;font-weight:600;margin-bottom:2px;">'+m+'</div>'
+        +'<div class="mono" style="font-size:9px;color:var(--green);">TIER 1</div>'
+        +'</div>';
+    }).join('');
+  }
+}
+
+function tgDash(di,ti){
+  var key='d'+di+'_'+new Date().toDateString();
+  if(!S.chk[key])S.chk[key]={};
+  S.chk[key][ti]=!S.chk[key][ti];
+  S.sc();rdDash();
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────────────────────
+function buildCal(){
+  var el=document.getElementById('calw');
+  if(!el)return;
+  el.innerHTML=DAYS.map(function(d,i){
+    return '<div class="cal-day" id="cd'+i+'" onclick="selectDay('+i+')">'
+      +'<div class="cal-lbl">DIA '+(i+1)+'</div>'
+      +'<div class="cal-nm">'+d.name+'</div>'
+      +'<div class="cal-tags">'+d.tags.map(function(t,j){return '<span class="ctag '+t+'">'+d.lbl[j]+'</span>';}).join('')+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function selectDay(i){
+  document.querySelectorAll('.cal-day').forEach(function(c,j){c.classList.toggle('active',i===j);});
+  var d=DAYS[i];
+  var key='d'+i+'_'+new Date().toDateString();
+  var chk=S.chk[key]||{};
+  var done=d.tasks.filter(function(_,ti){return chk[ti];}).length;
+  var totalMin=d.tasks.reduce(function(s,t){return s+parseInt(t.tm);},0);
+  var th='';
+  d.tasks.forEach(function(t,ti){
+    th+='<div class="chi'+(chk[ti]?' done':'')+'" onclick="tgChk('+i+','+ti+')">'
+      +'<div class="chb">'+(chk[ti]?'<span class="chic">✓</span>':'')+'</div>'
+      +'<div class="chbd" style="flex:1;"><div class="cht">'+t.t+'</div><div class="chd">'+t.d+'</div><div class="chtm">'+t.tm+'</div></div>'
+      +'</div>';
+  });
+  var det=document.getElementById('ddet');
+  if(det)det.innerHTML=
+    '<div class="ph-eye">PLAN DETALLADO</div>'
+    +'<div style="font-size:18px;font-weight:600;margin-bottom:4px;">'+d.name+' - '+d.focus+'</div>'
+    +'<div style="font-size:12px;color:var(--muted);margin-bottom:1.25rem;display:flex;align-items:center;gap:10px;"><span>~'+totalMin+' min</span>'+prog(done,d.tasks.length)+'</div>'
+    +'<div class="chklist">'+th+'</div>';
+}
+
+function tgChk(di,ti){
+  var key='d'+di+'_'+new Date().toDateString();
+  if(!S.chk[key])S.chk[key]={};
+  S.chk[key][ti]=!S.chk[key][ti];
+  S.sc();selectDay(di);rdDash();
+}
+
+// ── PROSPECTOR ────────────────────────────────────────────────────────────────
+function buildCats(){
+  var el=document.getElementById('cgrid');
+  if(!el)return;
+  el.innerHTML=CATS.map(function(c){
+    return '<div class="cch on" data-k="'+c.key+'" onclick="this.classList.toggle(\'on\')">'
+      +'<div class="cico">'+c.icon+'</div>'
+      +'<div class="cnme">'+c.name+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function buildMkts(){
+  var el=document.getElementById('mwrap');
+  if(!el)return;
+  var all=[];
+  MKTS.t1.forEach(function(m){all.push({n:m.name,t:1});});
+  MKTS.t2.forEach(function(m){all.push({n:m.name,t:2});});
+  MKTS.t3.forEach(function(m){all.push({n:m.name,t:3});});
+  el.innerHTML=all.map(function(m,i){
+    return '<span class="mp'+(m.t===1?' t1':'')+' '+(i<5?'on':'')+'" onclick="this.classList.toggle(\'on\')">'+m.n+'</span>';
+  }).join('');
+}
+
+async function runSearch(batch){
+  var cats=Array.from(document.querySelectorAll('#cgrid .cch.on')).map(function(c){return c.dataset.k;});
+  var mkts=Array.from(document.querySelectorAll('#mwrap .mp.on')).map(function(c){return c.textContent.trim();});
+  if(!cats.length){document.querySelectorAll('#cgrid .cch').forEach(function(c){c.classList.add('on');});cats=Array.from(document.querySelectorAll('#cgrid .cch.on')).map(function(c){return c.dataset.k;});}
+  if(!mkts.length){document.querySelectorAll('#mwrap .mp').forEach(function(m,i){if(i<5)m.classList.add('on');});mkts=Array.from(document.querySelectorAll('#mwrap .mp.on')).map(function(c){return c.textContent.trim();});}
+  var b1=document.getElementById('bs1'),b2=document.getElementById('bs2');
+  if(b1)b1.disabled=true;if(b2)b2.disabled=true;
+  if(!batch){
+    document.getElementById('rarea').innerHTML='<div class="ldst"><span class="spin"></span>Buscando en '+mkts.slice(0,3).join(', ')+'...</div>';
+    allR=await doSearch(cats,mkts);
+    renderR(allR);
+  }else{
+    allR=[];
+    var prog2=document.getElementById('bprog');
+    if(prog2)prog2.style.display='block';
+    for(var i=0;i<BATCH.length;i++){
+      var cfg=BATCH[i];
+      if(prog2)prog2.innerHTML='<span class="spin"></span>Busqueda '+(i+1)+'/7 - '+cfg.lbl+'... ('+allR.length+' encontrados)';
+      var r=await doSearch(cfg.cats,cfg.mkts);
+      var seen=new Set(allR.map(function(k){return k.handle;}));
+      allR=allR.concat(r.filter(function(k){return !seen.has(k.handle);}));
+      renderR(allR);
+      if(i<BATCH.length-1)await new Promise(function(res){setTimeout(res,2000);});
+    }
+    if(prog2){prog2.innerHTML='Lote completado - '+allR.length+' prospectos encontrados';setTimeout(function(){prog2.style.display='none';},4000);}
+  }
+  if(b1)b1.disabled=false;if(b2)b2.disabled=false;
+}
+
+async function doSearch(cats,mkts){
+  var cn=CATS.filter(function(c){return cats.indexOf(c.key)>=0;}).map(function(c){return c.name;});
+  var ra=document.getElementById('rarea');
+  try{
+    var resp=await fetch(API_BASE+'/api/search',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({cats:cn,mkts:mkts})
+    });
+    var data=await resp.json();
+
+    // Show any error from server in the UI
+    if(data.error){
+      var errMsg='ERROR DEL SERVIDOR: '+data.error;
+      if(data.raw)errMsg+='\n\nRespuesta de Groq: '+data.raw;
+      if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--rdim);border:1px solid rgba(248,113,113,0.3);border-radius:var(--r2);font-size:13px;color:var(--red);white-space:pre-wrap;">'+errMsg+'</div>';
+      return[];
+    }
+
+    if(!resp.ok){
+      if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--rdim);border:1px solid rgba(248,113,113,0.3);border-radius:var(--r2);font-size:13px;color:var(--red);">HTTP Error '+resp.status+': '+JSON.stringify(data)+'</div>';
+      return[];
+    }
+
+    if(!data.results||!data.results.length){
+      if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--adim);border:1px solid rgba(251,191,36,0.3);border-radius:var(--r2);font-size:13px;color:var(--amber);">Groq no devolvio resultados. Intenta de nuevo — compound-beta a veces tarda.</div>';
+      return[];
+    }
+
+    console.log('Encontrados:',data.results.length,'prospectos');
+    return data.results;
+
+  }catch(err){
+    if(ra)ra.innerHTML='<div style="padding:1.5rem;background:var(--rdim);border:1px solid rgba(248,113,113,0.3);border-radius:var(--r2);font-size:13px;color:var(--red);">Error de conexion: '+err.message+'</div>';
+    return[];
+  }
+}
+
+function renderR(kols){
+  var ra=document.getElementById('rarea');
+  if(!ra)return;
+  if(!kols.length){ra.innerHTML='<div class="emst">No se encontraron resultados. Intenta de nuevo.</div>';return;}
+  var inP=function(h){return S.pipe.some(function(p){return p.handle===h;});};
+  var html='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">'
+    +'<span class="rcnt">'+kols.length+' PROSPECTOS</span>'
+    +'<button class="btn bbl" style="font-size:11px;" onclick="addAll()">+ Todos al pipeline</button>'
+    +'</div><div class="klist">';
+  kols.forEach(function(k,i){
+    var c=AVC[i%AVC.length];
+    var ini=(k.name||'K').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    var bdgs='<span class="bdg bplt">'+(k.platform||'')+'</span>'
+      +'<span class="bdg bt'+(k.tier||2)+'">'+(k.market||'')+' T'+(k.tier||2)+'</span>'
+      +(k.isGlobalBig?'<span class="bdg bgl">Global</span>':'')
+      +(k.hasExistingDeal?'<span class="bdg bex">'+(k.currentExchange||'Deal')+'</span>':'');
+    html+='<div class="kcard" id="kc'+i+'">'
+      +'<div class="kin"><div class="ktop">'
+      +'<div class="kav" style="background:'+c[0]+';color:'+c[1]+';">'+ini+'</div>'
+      +'<div class="kinf"><div class="knm">'+(k.name||'')+'</div><div class="khdl">'+(k.handle||'')+'</div></div>'
+      +'<div class="kbdgs">'+bdgs+'</div></div>'
+      +'<div class="ksts">'
+      +'<div class="kst"><div class="kstv">'+(k.followers||'?')+'</div><div class="kstl">Seguidores</div></div>'
+      +'<div class="kst"><div class="kstv">'+(k.engagement||'?')+'</div><div class="kstl">Engagement</div></div>'
+      +'<div class="kst"><div class="kstv" style="font-size:10px;">'+(k.niche||'').slice(0,22)+'</div><div class="kstl">Nicho</div></div>'
+      +'</div>'
+      +'<div class="krsn">'+(k.reason||'')+'</div>'
+      +'<div class="keml"><span class="kemlb">EMAIL:</span><span style="font-size:11px;color:'+(k.email&&k.email!=='null'?'var(--green)':'var(--amber)')+';">'+(k.email||'Buscar en bio')+'</span></div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+      +'<button class="btn bgh" style="font-size:11px;" onclick="genEml('+i+',allR['+i+'])">Generar email</button>'
+      +(inP(k.handle)?'<span style="font-size:11px;color:var(--green);">En pipeline</span>':'<button class="btn bg" style="font-size:11px;" onclick="addP(allR['+i+'],'+i+')">+ Pipeline</button>')
+      +'<button class="btn bgh" style="font-size:11px;" onclick="prefill(allR['+i+'])">Pitch Builder</button>'
+      +'</div></div><div id="ec'+i+'"></div></div>';
+  });
+  ra.innerHTML=html+'</div>';
+}
+
+async function genEml(idx,kol){
+  var c=document.getElementById('ec'+idx);if(!c)return;
+  c.innerHTML='<div class="ldst" style="padding:1rem;"><span class="spin"></span>Redactando...</div>';
+  var isRe=kol&&kol.hasExistingDeal;
+  var mkt=(kol&&kol.market)||'';
+  var lang=mkt.indexOf('Brasil')>=0?'portugues':mkt.toLowerCase().indexOf('turqu')>=0?'ingles con apertura en turco':'ingles';
+  var prompt=isRe
+    ?'Email renegociacion BD Bitunix. '+kol.name+', '+kol.platform+', '+kol.followers+', '+mkt+'. Exchange: '+(kol.currentExchange||'competidor')+'. REGLAS: NO porcentaje exacto, usar "condiciones muy por encima del mercado". Reconocer acuerdo con respeto. $22K USD/mes promedio socios similares. Call 15 min. Max 150 palabras. Idioma: '+lang+'. Solo JSON: {"subject":"...","body":"..."}'
+    :'Email primer contacto BD Bitunix. '+((kol&&kol.name)||'')+', '+((kol&&kol.platform)||'')+', '+((kol&&kol.followers)||'')+', '+mkt+', nicho: '+((kol&&kol.niche)||'')+'. REGLAS: NO porcentaje exacto, usar "condiciones muy por encima del mercado". Apertura personalizada. Copy trading futuros, 200x leverage, $22K USD/mes, 18K afiliados. Call 20 min. Max 140 palabras. Idioma: '+lang+'. Solo JSON: {"subject":"...","body":"..."}';
+  try{
+    var txt=await callAPI('email',{prompt:prompt});
+    var clean=txt.replace(/```json?|```/g,'').trim();
+    var s=clean.indexOf('{'),e=clean.lastIndexOf('}');
+    var em=JSON.parse(clean.slice(s,e+1));
+    EMAILS[idx]={subject:em.subject,body:em.body,kol:kol};
+    c.innerHTML='<div class="epan">'
+      +'<div class="eplbl">'+(isRe?'RENEGOCIACION':'PRIMER CONTACTO')+'</div>'
+      +'<div class="epsb">'+em.subject+'</div>'
+      +'<div class="epbdy">'+em.body+'</div>'
+      +'<div class="epact">'
+      +'<button class="btn bgh" style="font-size:11px;" onclick="cpEmail('+idx+')">Copiar</button>'
+      +'<button class="btn bgh" style="font-size:11px;" onclick="document.getElementById(\'ec'+idx+'\').innerHTML=\'\'">Cerrar</button>'
+      +'</div></div>';
+  }catch(err){c.innerHTML='<div style="padding:1rem;font-size:12px;color:var(--red);">Error: '+err.message+'</div>';}
+}
+
+function cpEmail(idx){
+  var e=EMAILS[idx];if(!e)return;
+  navigator.clipboard.writeText(e.subject+'\n\n'+e.body).then(function(){alert('Email copiado al portapapeles');});
+}
+
+function addP(kol,idx){
+  if(!kol||S.pipe.some(function(p){return p.handle===kol.handle;}))return;
+  S.pipe.push(Object.assign({},kol,{status:'new',addedAt:new Date().toLocaleDateString('es-CO')}));
+  S.save();
+  var btn=document.querySelector('#kc'+idx+' .bg');
+  if(btn)btn.outerHTML='<span style="font-size:11px;color:var(--green);">En pipeline</span>';
+  rdDash();rdPlq();
+}
+
+function addAll(){
+  var seen=new Set(S.pipe.map(function(p){return p.handle;}));var n=0;
+  allR.forEach(function(k){if(k&&!seen.has(k.handle)){S.pipe.push(Object.assign({},k,{status:'new',addedAt:new Date().toLocaleDateString('es-CO')}));seen.add(k.handle);n++;}});
+  S.save();rdDash();rdPlq();alert(n+' prospectos agregados al pipeline.');
+}
+
+// ── PIPELINE ──────────────────────────────────────────────────────────────────
+function rdPipe(){
+  var board=document.getElementById('pboard');if(!board)return;
+  board.innerHTML=STS.map(function(st){
+    var cards=S.pipe.filter(function(p){return p.status===st.key;});
+    var ch='';
+    if(!cards.length){ch='<div style="font-size:11px;color:var(--dim);text-align:center;padding:1rem 0;">-</div>';}
+    else{cards.forEach(function(p){
+      var gi=S.pipe.indexOf(p),ac=AVC[gi%AVC.length];
+      var ini=(p.name||'K').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      var opts=STS.map(function(s){return '<option value="'+s.key+'"'+(p.status===s.key?' selected':'')+'>'+s.label+'</option>';}).join('');
+      ch+='<div class="pcrd">'
+        +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">'
+        +'<div style="width:24px;height:24px;border-radius:50%;background:'+ac[0]+';color:'+ac[1]+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;">'+ini+'</div>'
+        +'<div style="min-width:0;"><div class="pcn">'+(p.name||'')+'</div><div class="pcm">'+(p.platform||'')+' '+(p.followers||'')+'</div></div></div>'
+        +(p.hasExistingDeal?'<span style="font-size:9px;padding:2px 6px;border-radius:99px;background:var(--adim);color:var(--amber);display:inline-block;margin-bottom:5px;">'+(p.currentExchange||'Deal')+'</span>':'')
+        +'<select class="pcsel" onchange="updSt('+gi+',this.value)" style="width:100%;background:var(--s3);border:1px solid var(--border);color:var(--text);">'+opts+'</select>'
+        +'<button onclick="analyzeReply('+gi+')" style="width:100%;margin-top:5px;padding:4px;background:var(--gdim);border:1px solid rgba(127,255,106,0.15);border-radius:5px;color:var(--green);font-size:9px;cursor:pointer;">Analizar respuesta IA</button>'
+        +'</div>';
+    });}
+    return '<div class="pcol"><div class="pchdr"><span class="pct" style="color:'+st.color+';">'+st.label+'</span><span class="pcc">'+cards.length+'</span></div><div class="pcrds">'+ch+'</div></div>';
+  }).join('');
+}
+
+function updSt(i,v){S.pipe[i].status=v;S.save();rdPipe();rdDash();}
+
+function expCSV(){
+  if(!S.pipe.length){alert('No hay datos en el pipeline.');return;}
+  var hdr='Nombre,Handle,Plataforma,Mercado,Seguidores,Email,Estado,Acuerdo previo,Exchange actual,Agregado';
+  var rows=S.pipe.map(function(p){return [p.name||'',p.handle||'',p.platform||'',p.market||'',p.followers||'',p.email||'',p.status||'',p.hasExistingDeal?'Si':'No',p.currentExchange||'',p.addedAt||''].map(function(v){return String(v).replace(/,/g,' ');}).join(',');});
+  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(hdr+'\n'+rows.join('\n'));a.download='bitunix_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+function clrPipe(){if(confirm('Borrar todo el pipeline?')){S.pipe=[];S.save();rdPipe();rdDash();}}
+
+// ── PITCH BUILDER ─────────────────────────────────────────────────────────────
+function rdPlq(){
+  var el=document.getElementById('plq');if(!el||!S.pipe.length)return;
+  var opts='<option value="">Selecciona un prospecto...</option>'+S.pipe.map(function(p,i){return '<option value="'+i+'">'+p.name+' ('+( p.platform||'')+' - '+(p.market||'')+')</option>';}).join('');
+  el.innerHTML='<div class="card"><div class="sl" style="margin-bottom:8px;">CARGAR DESDE PIPELINE</div><select id="plsel" style="margin-bottom:8px;">'+opts+'</select><button class="btn bgh" style="width:100%;font-size:12px;" onclick="ldPl()">Cargar datos</button></div>';
+}
+
+function ldPl(){var i=parseInt(document.getElementById('plsel').value);if(isNaN(i))return;prefill(S.pipe[i]);}
+
+function prefill(k){
+  if(!k)return;
+  var f={pn:k.name,pp:k.platform,pf:k.followers,pni:k.niche,pco:k.market};
+  Object.keys(f).forEach(function(id){var el=document.getElementById(id);if(el)el.value=f[id]||'';});
+  var ex=document.getElementById('pex');if(ex)ex.checked=!!k.hasExistingDeal;
+  var exch=document.getElementById('pexch');if(exch){exch.disabled=!k.hasExistingDeal;exch.value=k.currentExchange||'';}
+  nav('pitch',document.querySelectorAll('.nb')[4]);
+}
+
+async function lookupProspect(){
+  var name=document.getElementById('pn').value.trim();
+  if(!name){alert('Escribe el nombre del prospecto primero.');return;}
+  var btn=document.getElementById('plookup');if(btn){btn.disabled=true;btn.textContent='Buscando...';}
+  var st=document.getElementById('plookup-status');if(st)st.innerHTML='<span class="spin"></span>Buscando datos de '+name+'...';
+  try{
+    var txt=await callAPI('lookup',{name:name});
+    var s=txt.indexOf('{'),e=txt.lastIndexOf('}');
+    var info=JSON.parse(txt.slice(s,e+1));
+    var map={pn:'name',pp:'platform',pf:'followers',pni:'niche',pco:'country'};
+    Object.keys(map).forEach(function(id){var el=document.getElementById(id);if(el&&info[map[id]])el.value=info[map[id]];});
+    var pl=document.getElementById('pl');if(pl&&info.language)pl.value=info.language;
+    var ex=document.getElementById('pex');if(ex)ex.checked=!!info.hasExistingDeal;
+    var exch=document.getElementById('pexch');if(exch){exch.disabled=!info.hasExistingDeal;if(info.currentExchange)exch.value=info.currentExchange;}
+    if(st)st.innerHTML='<span style="color:var(--green);">Datos encontrados'+(info.email&&info.email!=='null'?' - Email: '+info.email:'')+'</span>';
+  }catch(err){if(st)st.innerHTML='<span style="color:var(--amber);">No encontrado automaticamente. Completa manualmente.</span>';}
+  if(btn){btn.disabled=false;btn.textContent='Buscar datos';}
+}
+
+async function bldPitch(){
+  var name=document.getElementById('pn').value.trim();
+  if(!name){alert('Ingresa el nombre del prospecto.');return;}
+  var plat=document.getElementById('pp').value;
+  var fol=document.getElementById('pf').value.trim();
+  var niche=document.getElementById('pni').value.trim();
+  var country=document.getElementById('pco').value.trim();
+  var lang=document.getElementById('pl').value;
+  var hasEx=document.getElementById('pex').checked;
+  var exch=document.getElementById('pexch').value.trim();
+  var pout=document.getElementById('pout');
+  if(pout)pout.innerHTML='<div class="ldst"><span class="spin"></span>Generando pitch...</div>';
+  var prompt=hasEx
+    ?'Email renegociacion BD Bitunix. '+name+', '+plat+', '+fol+', '+country+', nicho: '+niche+'. Exchange: '+(exch||'competidor')+'. NO porcentaje exacto - "condiciones muy por encima del mercado". Reconocer acuerdo. $22K USD/mes. Call 15 min. Max 160 palabras. Idioma: '+lang+'. Solo JSON: {"subject":"...","body":"..."}'
+    :'Email primer contacto BD Bitunix. '+name+', '+plat+', '+fol+', '+country+', nicho: '+niche+'. NO porcentaje exacto - "condiciones muy por encima del mercado". Apertura personalizada. Copy trading futuros, 200x, $22K USD/mes, 18K afiliados. Call 20 min. Max 140 palabras. Idioma: '+lang+'. Solo JSON: {"subject":"...","body":"..."}';
+  try{
+    var txt=await callAPI('email',{prompt:prompt});
+    var clean=txt.replace(/```json?|```/g,'').trim();
+    var s=clean.indexOf('{'),e=clean.lastIndexOf('}');
+    var em=JSON.parse(clean.slice(s,e+1));
+    if(pout)pout.innerHTML=
+      '<div style="font-size:9px;letter-spacing:0.1em;color:var(--green);margin-bottom:8px;">'+(hasEx?'RENEGOCIACION':'PRIMER CONTACTO')+' - '+lang.toUpperCase()+'</div>'
+      +'<div style="font-size:13px;font-weight:600;padding:10px;background:var(--s2);border-radius:var(--r);margin-bottom:10px;border-left:2px solid var(--green);">'+em.subject+'</div>'
+      +'<div style="font-size:13px;color:var(--muted);line-height:1.85;white-space:pre-wrap;background:var(--s2);padding:14px;border-radius:var(--r);">'+em.body+'</div>'
+      +'<div style="display:flex;gap:8px;margin-top:12px;">'
+      +'<button class="btn bg" style="font-size:12px;" onclick="navigator.clipboard.writeText(document.querySelector(\'#pout div:nth-child(2)\').textContent+\'\\n\\n\'+document.querySelector(\'#pout div:nth-child(3)\').textContent).then(function(){alert(\'Copiado\');})">Copiar email</button>'
+      +'<button class="btn bgh" style="font-size:12px;" onclick="bldPitch()">Regenerar</button>'
+      +'<button class="btn bgh" style="font-size:12px;" onclick="clrPitch()">Nuevo</button>'
+      +'</div>';
+  }catch(err){if(pout)pout.innerHTML='<div class="emst" style="color:var(--red);">Error: '+err.message+'</div>';}
+}
+
+function clrPitch(){
+  ['pn','pf','pni','pco','pexch'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var pp=document.getElementById('pp');if(pp)pp.value='';
+  var pl=document.getElementById('pl');if(pl)pl.value='ingles';
+  var ex=document.getElementById('pex');if(ex)ex.checked=false;
+  var exch=document.getElementById('pexch');if(exch)exch.disabled=true;
+  var pout=document.getElementById('pout');if(pout)pout.innerHTML='<div class="emst" style="padding:4rem 0;">El email aparecera aqui</div>';
+  var st=document.getElementById('plookup-status');if(st)st.textContent='';
+}
+
+// ── MARKETS ───────────────────────────────────────────────────────────────────
+function buildMarkets(){
+  ['t1','t2','t3'].forEach(function(t){
+    var el=document.getElementById('m'+t);if(!el)return;
+    el.innerHTML=MKTS[t].map(function(m){
+      return '<div class="mcard '+t+'">'
+        +'<div class="mnm">'+m.name+'</div>'
+        +'<div class="mlg">'+m.lang+'</div>'
+        +'<div class="mtgs">'+m.tags.map(function(tg){return '<span class="mtg">'+tg+'</span>';}).join('')+'</div>'
+        +'<div class="mnote">'+m.note+'</div>'
+        +'</div>';
+    }).join('');
+  });
+}
+
+function buildExcl(){
+  var el=document.getElementById('excl');if(!el)return;
+  el.innerHTML=EXCL.map(function(c){return '<span style="font-size:10px;padding:3px 10px;border-radius:99px;background:var(--rdim);color:var(--red);border:1px solid rgba(248,113,113,0.2);">'+c+'</span>';}).join('');
+}
+
+// ── AI FEATURES ───────────────────────────────────────────────────────────────
+async function analyzeReply(idx){
+  var kol=S.pipe[idx];if(!kol)return;
+  var replyText=window.prompt('Pega la respuesta del KOL aqui:','');
+  if(!replyText||replyText.trim().length<5)return;
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML='<div class="card" style="width:480px;max-height:80vh;overflow-y:auto;border-radius:var(--r3);">'
+    +'<div style="font-size:17px;font-weight:600;margin-bottom:1rem;">'+kol.name+'</div>'
+    +'<div id="ai-analysis"><span class="spin"></span>Analizando con IA...</div>'
+    +'<button onclick="this.closest(\'div[style]\').remove()" style="margin-top:1.25rem;width:100%;padding:9px;background:var(--s2);border:1px solid var(--border);border-radius:99px;color:var(--muted);cursor:pointer;font-size:13px;">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(overlay);
+  try{
+    var p='Analiza esta respuesta de un KOL de criptomonedas a propuesta de partnership con Bitunix.\nKOL: '+kol.name+' ('+kol.platform+', '+kol.followers+')\nRespuesta: "'+replyText+'"\nDevuelve JSON: {"sentiment":"POSITIVO|NEUTRAL|NEGATIVO","intent":"descripcion corta","next_action":"accion concreta recomendada","reply_draft":"borrador de respuesta max 80 palabras","deal_probability":50}\nSolo JSON.';
+    var txt=await callAPI('analyze',{prompt:p});
+    var s=txt.indexOf('{'),e=txt.lastIndexOf('}');
+    var r=JSON.parse(txt.slice(s,e+1));
+    var col=r.sentiment==='POSITIVO'?'var(--green)':r.sentiment==='NEGATIVO'?'var(--red)':'var(--amber)';
+    var an=document.getElementById('ai-analysis');
+    if(an)an.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><span style="padding:3px 10px;border-radius:99px;border:1px solid '+col+';color:'+col+';font-size:11px;font-weight:700;">'+r.sentiment+'</span><span style="font-size:20px;font-weight:700;color:'+col+';">'+r.deal_probability+'%</span><span style="font-size:11px;color:var(--muted);">probabilidad de cierre</span></div><div style="margin-bottom:10px;padding:10px;background:var(--s2);border-radius:var(--r);border-left:2px solid '+col+';"><div style="font-size:10px;color:var(--dim);margin-bottom:4px;">INTENCION</div><div style="font-size:13px;">'+r.intent+'</div></div><div style="margin-bottom:10px;padding:10px;background:var(--s2);border-radius:var(--r);border-left:2px solid var(--gold);"><div style="font-size:10px;color:var(--dim);margin-bottom:4px;">ACCION RECOMENDADA</div><div style="font-size:13px;color:var(--gold);font-weight:500;">'+r.next_action+'</div></div><div style="padding:10px;background:var(--s2);border-radius:var(--r);"><div style="font-size:10px;color:var(--dim);margin-bottom:6px;">BORRADOR DE RESPUESTA</div><div style="font-size:12px;color:var(--muted);line-height:1.7;">'+r.reply_draft+'</div></div>';
+    if(r.sentiment==='POSITIVO'&&S.pipe[idx].status==='contacted'){S.pipe[idx].status='replied';S.save();rdPipe();rdDash();}
+  }catch(err){var an2=document.getElementById('ai-analysis');if(an2)an2.innerHTML='<span style="color:var(--red);">Error: '+err.message+'</span>';}
+}
+
+async function scoreAll(){
+  if(!S.pipe.length){alert('No hay prospectos en el pipeline.');return;}
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML='<div class="card" style="width:560px;max-height:80vh;overflow-y:auto;border-radius:var(--r3);">'
+    +'<div style="font-size:17px;font-weight:600;margin-bottom:4px;">Scoring IA</div>'
+    +'<div style="font-size:12px;color:var(--muted);margin-bottom:1.25rem;">'+S.pipe.length+' prospectos analizados</div>'
+    +'<div id="score-list"><span class="spin"></span>Analizando...</div>'
+    +'<button onclick="this.closest(\'div[style]\').remove()" style="margin-top:1.25rem;width:100%;padding:9px;background:var(--s2);border:1px solid var(--border);border-radius:99px;color:var(--muted);cursor:pointer;font-size:13px;">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(overlay);
+  try{
+    var profiles=S.pipe.map(function(p,i){return i+'. '+p.name+' | '+(p.platform||'')+' | '+(p.followers||'?')+' | '+(p.market||'Global');}).join('\n');
+    var p='Analiza estos prospectos KOL para Bitunix y asignales un score 1-10 basado en: potencial de volumen de trading, tamano de audiencia, relevancia para futuros cripto. Datos:\n'+profiles+'\nDevuelve JSON array ordenado de mayor a menor: [{"idx":0,"score":8,"reason":"razon concreta"}]. Solo JSON.';
+    var txt=await callAPI('analyze',{prompt:p});
+    var s=txt.indexOf('['),e=txt.lastIndexOf(']');
+    var scores=JSON.parse(txt.slice(s,e+1));
+    var html=scores.map(function(item){
+      var p2=S.pipe[item.idx];if(!p2)return'';
+      var sc=item.score||5;
+      var col=sc>=8?'var(--green)':sc>=6?'var(--amber)':'var(--red)';
+      return '<div style="display:flex;gap:12px;padding:10px;background:var(--s2);border-radius:var(--r);margin-bottom:7px;">'
+        +'<div style="min-width:36px;height:36px;border-radius:50%;border:2px solid '+col+';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:'+col+';flex-shrink:0;">'+sc+'</div>'
+        +'<div><div style="font-size:13px;font-weight:600;margin-bottom:2px;">'+p2.name+'</div>'
+        +'<div style="font-size:10px;color:var(--muted);">'+(p2.platform||'')+' - '+(p2.followers||'?')+'</div>'
+        +'<div style="font-size:11px;color:var(--dim);margin-top:3px;">'+(item.reason||'')+'</div></div></div>';
+    }).join('');
+    var sl=document.getElementById('score-list');if(sl)sl.innerHTML=html||'<div class="emst">Sin resultados</div>';
+  }catch(err){var sl2=document.getElementById('score-list');if(sl2)sl2.innerHTML='<span style="color:var(--red);">Error: '+err.message+'</span>';}
+}
+</script>
+</body>
+</html>
