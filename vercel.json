@@ -4,15 +4,16 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Pragma", "value": "no-cache" },
-        { "key": "Expires", "value": "0" }
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]
     }
   ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/gmail-callback", "dest": "/api/gmail-callback" },
+    { "src": "/(.*)", "dest": "/public/index.html" }
+  ],
   "functions": {
-    "api/*.js": {
-      "maxDuration": 30
-    }
+    "api/*.js": { "maxDuration": 30 }
   }
 }
