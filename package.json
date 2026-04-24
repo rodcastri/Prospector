@@ -1,9 +1,9 @@
 {
   "name": "bitunix-bd-prospector",
   "version": "1.0.0",
-  "description": "Bitunix BD Prospector - KOL outreach tool",
   "private": true,
+  "type": "module",
   "engines": {
-    "node": ">=18"
+    "node": "18.x"
   }
 }
