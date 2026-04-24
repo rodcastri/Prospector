@@ -1,22 +1,21 @@
 # Bitunix BD Prospector
 
-KOL outreach tool for Bitunix exchange — powered by Perplexity Sonar with real-time web search.
-
-## Setup
-
-1. Deploy to Vercel
-2. Add environment variable: `PERPLEXITY_API_KEY` = your Perplexity API key
-3. Done — the app works immediately
-
-## API Endpoints
-
-- `POST /api/search` — Find KOLs with real-time web search
-- `POST /api/email` — Generate personalized outreach emails
-- `POST /api/lookup` — Look up a specific KOL's profile
-- `POST /api/analyze` — Analyze replies and score prospects
+Herramienta de outreach para KOLs de Bitunix exchange — powered by Groq AI con busqueda web en tiempo real.
 
 ## Stack
 
-- Frontend: Vanilla HTML/CSS/JS
+- Frontend: HTML/CSS/JS (sin frameworks)
 - Backend: Vercel Serverless Functions
-- AI: Perplexity Sonar (real-time web search)
+- AI: Groq Compound Beta (busqueda real) + Llama 3.3 70B (emails)
+
+## Variables de entorno en Vercel
+
+GROQ_API_KEY = tu key de Groq (empieza con gsk_...)
+
+## Endpoints
+
+- POST /api/search  — Busca KOLs en tiempo real
+- POST /api/email   — Genera emails personalizados
+- POST /api/lookup  — Busca perfil de un KOL especifico
+- POST /api/analyze — Analiza respuestas y hace scoring
+- GET  /api/test    — Diagnostico de conexion con Groq
