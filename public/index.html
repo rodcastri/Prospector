@@ -1000,7 +1000,7 @@ function saveGmailCid(){
 function connectGmail(){
   var cid=localStorage.getItem('bx_gcid')||'';
   if(!cid){alert('Primero guarda tu Google Client ID en el campo de arriba.');return;}
-  var redirectUri=window.location.origin+'/gmail-callback';
+  var redirectUri=window.location.origin+'/api/gmail-callback';
   var url='https://accounts.google.com/o/oauth2/v2/auth'
     +'?client_id='+encodeURIComponent(cid)
     +'&redirect_uri='+encodeURIComponent(redirectUri)
