@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // This page receives the OAuth redirect from Google
   // Google sends the token in the URL hash (client-side only)
   // So we serve an HTML page that reads the hash and saves the token
