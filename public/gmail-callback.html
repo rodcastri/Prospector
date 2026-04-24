@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Conectando Gmail...</title>
+<style>
+body{background:#09090f;color:#eeeef5;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;}
+.box{text-align:center;padding:2rem;}
+.spin{display:inline-block;width:32px;height:32px;border:3px solid rgba(127,255,106,0.2);border-top-color:#7fff6a;border-radius:50%;animation:sp 0.7s linear infinite;margin-bottom:1rem;}
+@keyframes sp{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="spin"></div>
+  <div style="font-size:16px;color:#7fff6a;font-weight:600;">Conectando Gmail...</div>
+  <div style="font-size:12px;color:rgba(238,238,245,0.5);margin-top:8px;">Redirigiendo a la app...</div>
+</div>
+<script>
+// Extract token from URL hash and pass to main app
+var hash = window.location.hash || window.location.search;
+if (hash && hash.indexOf('access_token') >= 0) {
+  var params = new URLSearchParams(hash.replace('#','').replace('?',''));
+  var token = params.get('access_token');
+  var exp = Date.now() + parseInt(params.get('expires_in') || '3600') * 1000;
+  if (token) {
+    localStorage.setItem('bx_gt', token);
+    localStorage.setItem('bx_ge', String(exp));
+  }
+}
+// Redirect back to main app
+window.location.href = '/';
+</script>
+</body>
+</html>

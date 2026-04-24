@@ -586,6 +586,8 @@ window.onload=function(){
   updateGmailStatus();
   var cid=localStorage.getItem('bx_gcid')||'';
   if(cid)document.getElementById('g-cid').value=cid;
+  // Handle OAuth callback - check URL hash for access_token
+  handleGmailCallback();
 };
 
 function nav(page,el){
@@ -960,6 +962,27 @@ function buildExcl(){
 }
 
 // Gmail
+function handleGmailCallback(){
+  var hash=window.location.hash||window.location.search;
+  if(hash&&hash.indexOf('access_token')>=0){
+    var params=new URLSearchParams(hash.replace('#','').replace('?',''));
+    var token=params.get('access_token');
+    var exp=Date.now()+parseInt(params.get('expires_in')||'3600')*1000;
+    if(token){
+      localStorage.setItem('bx_gt',token);
+      localStorage.setItem('bx_ge',String(exp));
+      // Clean URL
+      window.history.replaceState({},'',window.location.pathname);
+      // Navigate to Gmail section
+      setTimeout(function(){
+        nav('gmail',document.querySelectorAll('.nb')[7]);
+        updateGmailStatus();
+        alert('Gmail conectado correctamente. Ya puedes enviar emails desde la app.');
+      },500);
+    }
+  }
+}
+
 function updateGmailStatus(){
   var el=document.getElementById('gmail-conn-status');if(!el)return;
   var token=getGmailToken();
@@ -977,29 +1000,16 @@ function saveGmailCid(){
 function connectGmail(){
   var cid=localStorage.getItem('bx_gcid')||'';
   if(!cid){alert('Primero guarda tu Google Client ID en el campo de arriba.');return;}
-  var vercelUrl=window.location.origin;
-  var url='https://accounts.google.com/o/oauth2/v2/auth?client_id='+encodeURIComponent(cid)
-    +'&redirect_uri='+encodeURIComponent(vercelUrl)
+  var redirectUri=window.location.origin+'/gmail-callback';
+  var url='https://accounts.google.com/o/oauth2/v2/auth'
+    +'?client_id='+encodeURIComponent(cid)
+    +'&redirect_uri='+encodeURIComponent(redirectUri)
     +'&response_type=token'
     +'&scope='+encodeURIComponent('https://www.googleapis.com/auth/gmail.send')
     +'&prompt=consent';
-  var popup=window.open(url,'gmailauth','width=500,height=600,scrollbars=yes');
-  var timer=setInterval(function(){
-    try{
-      var h=popup.location.href;
-      if(h.indexOf('access_token')>=0){
-        clearInterval(timer);
-        var params=new URLSearchParams(h.split('#')[1]||h.split('?')[1]);
-        var token=params.get('access_token');
-        var exp=Date.now()+parseInt(params.get('expires_in')||'3600')*1000;
-        localStorage.setItem('bx_gt',token);localStorage.setItem('bx_ge',String(exp));
-        popup.close();
-        updateGmailStatus();
-        alert('Gmail conectado correctamente. Ya puedes enviar emails desde la app.');
-      }
-    }catch(err){}
-    if(popup.closed)clearInterval(timer);
-  },500);
+  // Save current page state so we can return after auth
+  localStorage.setItem('bx_auth_return','gmail');
+  window.location.href=url;
 }
 function disconnectGmail(){
   localStorage.removeItem('bx_gt');localStorage.removeItem('bx_ge');
