@@ -550,7 +550,7 @@ async function findYouTubeEmail(idx,handle){
     for(var ii=0;ii<attempts.length;ii++){
       var h=attempts[ii];
       if(!h||h.length<2)continue;
-      var resp=await fetch(API_BASE+'/api/youtube',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({handle:h})});
+      var resp=await fetch(API_BASE+'/api/youtube',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({handle:h,name:(window.allR&&window.allR[idx])?window.allR[idx].name:h})});
       var data=await resp.json();
       if(data.email){found=data.email;break;}
     }
