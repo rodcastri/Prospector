@@ -172,6 +172,12 @@ select option{background:var(--s2);}
 .mtgs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px;}
 .mtg{font-size:9px;padding:2px 7px;border-radius:99px;background:var(--s2);border:1px solid var(--border);color:var(--muted);}
 .mnote{font-size:11px;color:var(--dim);line-height:1.5;}
+.reg-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.reg-tbl th{text-align:left;font-size:9px;letter-spacing:0.1em;color:var(--dim);padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.reg-tbl td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.reg-tbl tr:hover td{background:var(--s2);}
+.reg-note{font-size:11px;background:transparent;border:none;border-bottom:1px dashed var(--border);color:var(--muted);padding:1px 3px;width:140px;outline:none;font-family:'Inter',sans-serif;}
+.reg-note:focus{border-bottom-color:var(--green);}
 .spin{display:inline-block;width:13px;height:13px;border:1.5px solid rgba(255,255,255,0.09);border-top-color:var(--green);border-radius:50%;animation:sp 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
 @keyframes sp{to{transform:rotate(360deg);}}
 .ldst{text-align:center;padding:3rem;color:var(--muted);font-size:13px;}
@@ -204,6 +210,7 @@ select option{background:var(--s2);}
   <div class="nav-sec">ESTRATEGIA</div>
   <button class="nb" onclick="nav('markets',this)"><span class="nb-icon">&#9674;</span>Mercados</button>
   <button class="nb" onclick="nav('gmail',this)"><span class="nb-icon">&#9993;</span>Gmail</button>
+  <button class="nb" onclick="nav('registro',this)"><span class="nb-icon">&#9632;</span>Registro</button>
   <div class="sb-bot">
     <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;"><div style="width:6px;height:6px;border-radius:50%;background:var(--green);"></div>Groq conectado</div>
   </div>
@@ -405,6 +412,37 @@ select option{background:var(--s2);}
   </div>
 </div>
 
+<!-- REGISTRO -->
+<div id="page-registro" class="page">
+  <div class="ph">
+    <div class="ph-eye">HISTORIAL COMPLETO</div>
+    <div class="ph-title">Registro de KOLs</div>
+    <div class="ph-sub">Cada KOL encontrado queda aqui automaticamente · sin duplicados · control total</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1rem;">
+    <input id="reg-search" placeholder="Buscar nombre, handle, mercado, email..." style="max-width:260px;" oninput="rdRegistro()">
+    <select id="reg-status-filter" style="width:auto;padding:8px 10px;" onchange="rdRegistro()">
+      <option value="">Todos los estados</option>
+      <option value="nuevo">Nuevo</option>
+      <option value="contactado">Contactado</option>
+      <option value="respondio">Respondio</option>
+      <option value="negociando">Negociando</option>
+      <option value="cerrado">Cerrado</option>
+      <option value="descartado">Descartado</option>
+    </select>
+    <select id="reg-plat-filter" style="width:auto;padding:8px 10px;" onchange="rdRegistro()">
+      <option value="">Todas las plataformas</option>
+      <option value="YouTube">YouTube</option>
+      <option value="Twitter">Twitter/X</option>
+      <option value="Telegram">Telegram</option>
+    </select>
+    <button class="btn bbl" style="font-size:12px;" onclick="expRegCSV()">Exportar CSV</button>
+    <button class="btn bgh" style="font-size:12px;color:var(--red);" onclick="clrRegistro()">Limpiar todo</button>
+    <span id="reg-count" style="font-size:11px;color:var(--muted);margin-left:4px;"></span>
+  </div>
+  <div id="reg-table"><div class="emst">Haz una busqueda en el Prospector para ver el registro.</div></div>
+</div>
+
 </main>
 </div>
 <script>
@@ -491,6 +529,8 @@ var S={
   pipe:JSON.parse(localStorage.getItem('bx_p')||'[]'),
   chk:JSON.parse(localStorage.getItem('bx_c')||'{}'),
   seen:JSON.parse(localStorage.getItem('bx_seen')||'[]'),
+  reg:JSON.parse(localStorage.getItem('bx_reg')||'[]'),
+  saveReg:function(){localStorage.setItem('bx_reg',JSON.stringify(this.reg));},
   savedR:JSON.parse(localStorage.getItem('bx_r')||'[]'),
   save:function(){localStorage.setItem('bx_p',JSON.stringify(this.pipe));},
   sc:function(){localStorage.setItem('bx_c',JSON.stringify(this.chk));},
@@ -649,6 +689,13 @@ function expRegCSV(){
   var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(hdr+'\n'+rows.join('\n'));a.download='registro_kols_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 }
 
+function rdRegistro(){var q=(document.getElementById('reg-search')||{}).value||'';var sf=(document.getElementById('reg-status-filter')||{}).value||'';var pf=(document.getElementById('reg-plat-filter')||{}).value||'';var data=S.reg.filter(function(r){return(!q||[r.name,r.handle,r.market,r.email].join(' ').toLowerCase().includes(q.toLowerCase()))&&(!sf||r.status===sf)&&(!pf||(r.platform||'').toLowerCase().includes(pf.toLowerCase()));}).slice().reverse();var cnt=document.getElementById('reg-count');if(cnt)cnt.textContent=data.length+' de '+S.reg.length+' KOLs';var el=document.getElementById('reg-table');if(!el)return;if(!data.length){el.innerHTML='<div class="emst">No hay registros. Haz una busqueda en el Prospector.</div>';return;}var STS2=['nuevo','contactado','respondio','negociando','cerrado','descartado'];var h2='<div style="overflow-x:auto;"><table class="reg-tbl"><thead><tr><th>#</th><th>KOL</th><th>PLATAFORMA</th><th>MERCADO</th><th>SEGUIDORES</th><th>EMAIL</th><th>ESTADO</th><th>ENCONTRADO</th><th>CONTACTADO</th><th>RESPONDIO</th><th>NOTAS</th><th></th></tr></thead><tbody>';data.forEach(function(r){var ri=S.reg.indexOf(r);var opts=STS2.map(function(s){return'<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+s.charAt(0).toUpperCase()+s.slice(1)+'</option>';}).join('');h2+='<tr><td style="color:var(--dim);font-size:10px;font-family:monospace;">'+(S.reg.length-ri)+'</td><td><div style="font-weight:600;white-space:nowrap;">'+(r.name||r.handle)+'</div><div style="font-size:10px;color:var(--muted);">'+(r.handle||'')+'</div></td><td>'+getPlatformBadge(r.platform,r.handle)+'</td><td style="font-size:11px;color:var(--muted);white-space:nowrap;">'+(r.market||'')+'</td><td style="font-size:11px;font-family:monospace;">'+(r.followers||'')+'</td><td><input class="reg-note" value="'+(r.email||'')+'" placeholder="sin email" onchange="updRegEmail('+ri+',this.value)" style="color:'+(r.email?'var(--green)':'var(--dim)')+'"></td><td><select style="font-size:10px;padding:2px 5px;background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:5px;" onchange="updRegSt('+ri+',this.value)">'+opts+'</select></td><td style="font-size:10px;color:var(--dim);font-family:monospace;white-space:nowrap;">'+(r.foundAt||'-')+'</td><td style="font-size:10px;color:var(--blue);font-family:monospace;white-space:nowrap;">'+(r.contactedAt||'-')+'</td><td style="font-size:10px;color:var(--amber);font-family:monospace;white-space:nowrap;">'+(r.repliedAt||'-')+'</td><td><input class="reg-note" value="'+(r.notes||'')+'" placeholder="nota..." onchange="updRegNote('+ri+',this.value)"></td><td><button onclick="delReg('+ri+')" style="font-size:10px;padding:2px 6px;background:var(--rdim);border:1px solid rgba(248,113,113,0.2);border-radius:4px;color:var(--red);cursor:pointer;">X</button></td></tr>';});el.innerHTML=h2+'</tbody></table></div>';}
+function updRegSt(i,v){if(!S.reg[i])return;S.reg[i].status=v;var t=new Date().toLocaleDateString('es-CO');if(v==='contactado'&&!S.reg[i].contactedAt)S.reg[i].contactedAt=t;if(v==='respondio'&&!S.reg[i].repliedAt)S.reg[i].repliedAt=t;S.saveReg();}
+function updRegEmail(i,v){if(S.reg[i]){S.reg[i].email=v;S.saveReg();}}
+function updRegNote(i,v){if(S.reg[i]){S.reg[i].notes=v;S.saveReg();}}
+function delReg(i){if(confirm('Eliminar este KOL del registro?')){S.reg.splice(i,1);S.saveReg();rdRegistro();}}
+function clrRegistro(){if(confirm('Borrar TODO el registro?')){S.reg=[];S.saveReg();rdRegistro();}}
+function expRegCSV(){if(!S.reg.length){alert('No hay datos.');return;}var hdr='N,Nombre,Handle,Plataforma,Mercado,Seguidores,Email,Estado,Encontrado,Contactado,Respondio,Notas';var rows=S.reg.map(function(r,i){return[i+1,r.name,r.handle,r.platform,r.market,r.followers,r.email,r.status,r.foundAt,r.contactedAt,r.repliedAt,r.notes].map(function(v){return'"'+(v||'').replace(/"/g,'').replace(/,/g,' ')+'"';}).join(',');});var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(hdr+'\n'+rows.join('\n'));a.download='registro_'+new Date().toISOString().slice(0,10)+'.csv';a.click();}
 window.onload=function(){
   var now=new Date(),h=now.getHours();
   var g=h<12?'Buenos dias':h<19?'Buenas tardes':'Buenas noches';
@@ -676,6 +723,7 @@ function nav(page,el){
   if(page==='pitch')rdPlq();
   if(page==='prospector'&&allR.length)renderR(allR);
   if(page==='gmail')updateGmailStatus();
+  if(page==='registro')rdRegistro();
   if(page==='registro')rdRegistro();
 }
 
@@ -861,6 +909,9 @@ function renderR(kols){
   });
   ra.innerHTML=html+'</div>';
   S.savedR=kols;S.saveR();
+  var today=new Date().toLocaleDateString('es-CO');
+  kols.forEach(function(k){if(!k.handle)return;var ex=S.reg.find(function(r){return r.handle===k.handle;});if(!ex){S.reg.push({handle:k.handle,name:k.name||'',platform:k.platform||'',market:k.market||'',followers:k.followers||'',niche:k.niche||'',email:k.email||'',hasExistingDeal:!!k.hasExistingDeal,currentExchange:k.currentExchange||'',status:'nuevo',foundAt:today,contactedAt:'',repliedAt:'',notes:''});}else if(k.email&&k.email!=='null'&&!ex.email){ex.email=k.email;}});
+  S.saveReg();
 }
 async function genEml(idx,kol){
   var c=document.getElementById('ec'+idx);if(!c)return;
