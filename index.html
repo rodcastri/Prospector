@@ -536,6 +536,9 @@ function saveKolEmail(idx){
   if(val&&val.indexOf('@')>0){
     allR[idx].email=val;
     S.savedR=allR;S.saveR();
+    // Sync to registro
+    var regEntry=S.reg.find(function(r){return r.handle===allR[idx].handle;});
+    if(regEntry){regEntry.email=val;S.saveReg();}
     inp.style.borderBottomColor='var(--green)';
     setTimeout(function(){inp.style.borderBottomColor='';},2000);
   }
@@ -580,6 +583,72 @@ async function apiPost(ep,body){
 }
 
 // Boot
+
+function rdRegistro(){
+  var search=(document.getElementById('reg-search')||{}).value||'';
+  var stFilter=(document.getElementById('reg-status-filter')||{}).value||'';
+  var platFilter=(document.getElementById('reg-plat-filter')||{}).value||'';
+  var data=S.reg.filter(function(r){
+    var matchS=!search||r.name.toLowerCase().includes(search.toLowerCase())||r.handle.toLowerCase().includes(search.toLowerCase())||(r.market||'').toLowerCase().includes(search.toLowerCase())||(r.email||'').toLowerCase().includes(search.toLowerCase());
+    var matchSt=!stFilter||r.status===stFilter;
+    var matchP=!platFilter||(r.platform||'').toLowerCase().includes(platFilter.toLowerCase());
+    return matchS&&matchSt&&matchP;
+  });
+  // Sort: newest first
+  data=data.slice().reverse();
+  var cnt=document.getElementById('reg-count');
+  if(cnt)cnt.textContent=data.length+' de '+S.reg.length+' KOLs';
+  var el=document.getElementById('reg-table');
+  if(!el)return;
+  if(!data.length){el.innerHTML='<div class="emst">No hay registros todavia. Haz una busqueda en el Prospector.</div>';return;}
+  var STS2=['nuevo','contactado','respondio','negociando','cerrado','descartado'];
+  var html='<table class="reg-tbl"><thead><tr>'
+    +'<th>#</th><th>KOL</th><th>PLATAFORMA</th><th>MERCADO</th><th>SEGUIDORES</th>'
+    +'<th>EMAIL</th><th>ESTADO</th><th>ENCONTRADO</th><th>CONTACTADO</th><th>RESPONDIO</th>'
+    +'<th>NOTAS</th><th></th>'
+    +'</tr></thead><tbody>';
+  data.forEach(function(r,i){
+    var ri=S.reg.indexOf(r);
+    var stCls='reg-st reg-st-'+(r.status||'nuevo');
+    var stOpts=STS2.map(function(s){return'<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+s.charAt(0).toUpperCase()+s.slice(1)+'</option>';}).join('');
+    html+='<tr>'
+      +'<td style="color:var(--dim);font-family:monospace;font-size:10px;">'+(S.reg.length-ri)+'</td>'
+      +'<td><div style="font-weight:600;font-size:12px;">'+(r.name||r.handle)+'</div><div style="font-size:10px;color:var(--muted);">'+(r.handle||'')+'</div></td>'
+      +'<td>'+getPlatformBadge(r.platform,r.handle)+'</td>'
+      +'<td style="font-size:11px;color:var(--muted);">'+(r.market||'')+'</td>'
+      +'<td style="font-size:11px;font-family:monospace;">'+(r.followers||'')+'</td>'
+      +'<td><input class="reg-note" value="'+(r.email||'')+'" placeholder="sin email" onchange="updRegEmail('+ri+',this.value)" style="width:160px;color:'+(r.email?'var(--green)':'var(--dim)')+'"></td>'
+      +'<td><select style="font-size:10px;padding:2px 5px;background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:5px;" onchange="updRegSt('+ri+',this.value)">'+stOpts+'</select></td>'
+      +'<td style="font-size:10px;color:var(--dim);font-family:monospace;">'+(r.foundAt||'')+'</td>'
+      +'<td style="font-size:10px;color:var(--blue);font-family:monospace;">'+(r.contactedAt||'-')+'</td>'
+      +'<td style="font-size:10px;color:var(--amber);font-family:monospace;">'+(r.repliedAt||'-')+'</td>'
+      +'<td><input class="reg-note" value="'+(r.notes||'')+'" placeholder="agregar nota..." onchange="updRegNote('+ri+',this.value)"></td>'
+      +'<td><button onclick="delReg('+ri+')" style="font-size:10px;padding:2px 7px;background:var(--rdim);border:1px solid rgba(248,113,113,0.2);border-radius:5px;color:var(--red);cursor:pointer;">X</button></td>'
+      +'</tr>';
+  });
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+
+function updRegSt(i,v){
+  if(!S.reg[i])return;
+  S.reg[i].status=v;
+  var today=new Date().toLocaleDateString('es-CO');
+  if(v==='contactado'&&!S.reg[i].contactedAt)S.reg[i].contactedAt=today;
+  if(v==='respondio'&&!S.reg[i].repliedAt)S.reg[i].repliedAt=today;
+  S.saveReg();
+}
+function updRegEmail(i,v){if(S.reg[i]){S.reg[i].email=v;S.saveReg();}}
+function updRegNote(i,v){if(S.reg[i]){S.reg[i].notes=v;S.saveReg();}}
+function delReg(i){if(confirm('Eliminar este KOL del registro?')){S.reg.splice(i,1);S.saveReg();rdRegistro();}}
+function clrRegistro(){if(confirm('Borrar TODO el registro? Esto no se puede deshacer.')){S.reg=[];S.saveReg();rdRegistro();}}
+function expRegCSV(){
+  if(!S.reg.length){alert('No hay datos.');return;}
+  var hdr='N,Nombre,Handle,Plataforma,Mercado,Seguidores,Email,Estado,Encontrado,Contactado,Respondio,Notas,Deal previo,Exchange';
+  var rows=S.reg.map(function(r,i){return[i+1,r.name||'',r.handle||'',r.platform||'',r.market||'',r.followers||'',r.email||'',r.status||'',r.foundAt||'',r.contactedAt||'',r.repliedAt||'',r.notes||'',r.hasExistingDeal?'Si':'No',r.currentExchange||''].map(function(v){return'"'+String(v).replace(/"/g,'').replace(/,/g,' ')+'"';}).join(',');});
+  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(hdr+'\n'+rows.join('\n'));a.download='registro_kols_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
 window.onload=function(){
   var now=new Date(),h=now.getHours();
   var g=h<12?'Buenos dias':h<19?'Buenas tardes':'Buenas noches';
@@ -607,6 +676,7 @@ function nav(page,el){
   if(page==='pitch')rdPlq();
   if(page==='prospector'&&allR.length)renderR(allR);
   if(page==='gmail')updateGmailStatus();
+  if(page==='registro')rdRegistro();
 }
 
 function prog(done,total){
