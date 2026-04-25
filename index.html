@@ -507,8 +507,7 @@ function getPlatformBadge(platform,handle){
   var url=handle?getSocialUrl(platform,handle):'';
   var cls=p.indexOf('youtube')>=0?'plt-yt':p.indexOf('twitter')>=0||p==='x'?'plt-tw':p.indexOf('telegram')>=0?'plt-tg':p.indexOf('instagram')>=0?'plt-ig':p.indexOf('tiktok')>=0?'plt-tt':p.indexOf('discord')>=0?'plt-dc':'plt-def';
   var label=p.indexOf('youtube')>=0?'YouTube':p.indexOf('twitter')>=0||p==='x'?'Twitter/X':p.indexOf('telegram')>=0?'Telegram':p.indexOf('instagram')>=0?'Instagram':p.indexOf('tiktok')>=0?'TikTok':p.indexOf('discord')>=0?'Discord':(platform||'');
-  var badge='<span class="bdg '+cls+'">'+label+'</span>';
-  return url?'<a href="'+url+'" target="_blank" style="text-decoration:none;">'+badge+'</a>':badge;
+  return url?'<a href="'+url+'" target="_blank" class="bdg '+cls+'" style="text-decoration:none;font-weight:600;">'+label+' ↗</a>':'<span class="bdg '+cls+'">'+label+'</span>';
 }
 function getSocialUrl(platform,handle){
   if(!handle)return'#';
