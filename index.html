@@ -685,6 +685,24 @@ function updRegNote(i,v){if(S.reg[i]){S.reg[i].notes=v;S.saveReg();}}
 function delReg(i){if(!confirm('Eliminar este KOL?'))return;S.reg.splice(i,1);S.saveReg();rdRegistro();rdDash();}
 function clrRegistro(){if(!confirm('Borrar TODO el registro?'))return;S.reg=[];S.pipe=[];S.saveReg();S.save();rdRegistro();rdDash();}
 function expRegCSV(){if(!S.reg.length){alert('No hay datos.');return;}var hdr='N,Nombre,Handle,Plataforma,Mercado,Seguidores,Email,Estado,Encontrado,Contactado,Respondio,Notas';var rows=S.reg.map(function(r,i){return[i+1,r.name,r.handle,r.platform,r.market,r.followers,r.email,r.status,r.foundAt,r.contactedAt,r.repliedAt,r.notes].map(function(v){return'"'+(v||'').replace(/"/g,'').replace(/,/g,' ')+'"';}).join(',');});var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(hdr+'\n'+rows.join('\n'));a.download='registro_'+new Date().toISOString().slice(0,10)+'.csv';a.click();}
+function markContacted(kol,idx){
+  if(!kol)return;
+  var today=new Date().toLocaleDateString('es-CO');
+  var via=prompt('Como fue el contacto? (ej: DM Twitter, Telegram, LinkedIn...)','DM Twitter');
+  if(!via)return;
+  // Update registro
+  var ri=S.reg.findIndex(function(r){return r.handle===kol.handle;});
+  if(ri>=0){S.reg[ri].status='contactado';if(!S.reg[ri].contactedAt)S.reg[ri].contactedAt=today;S.reg[ri].notes=(S.reg[ri].notes?S.reg[ri].notes+' | ':'')+via+': '+today;S.saveReg();}
+  else{S.reg.push({handle:kol.handle,name:kol.name||'',platform:kol.platform||'',market:kol.market||'',followers:kol.followers||'',niche:kol.niche||'',email:kol.email||'',hasExistingDeal:!!kol.hasExistingDeal,currentExchange:kol.currentExchange||'',status:'contactado',foundAt:today,contactedAt:today,repliedAt:'',notes:via+': '+today});S.saveReg();}
+  // Add to pipeline if not there
+  if(!S.pipe.find(function(p){return p.handle===kol.handle;})){
+    S.pipe.push(Object.assign({},kol,{status:'contacted',addedAt:today,contactedAt:today,repliedAt:null}));S.save();
+  }
+  // Visual feedback on button
+  var btns=document.querySelectorAll('#kc'+idx+' button');
+  btns.forEach(function(b){if(b.textContent.includes('Contactado')){b.style.background='rgba(251,191,36,0.15)';b.textContent='\u2713 Contactado '+today;}});
+  rdDash();
+}
 window.onload=function(){
   var now=new Date(),h=now.getHours();
   var g=h<12?'Buenos dias':h<19?'Buenas tardes':'Buenas noches';
@@ -893,6 +911,7 @@ function renderR(kols){
       +'<button class="btn bgh" style="font-size:11px;" onclick="genEml('+i+',allR['+i+'])">Generar email</button>'
       +(inP(k.handle)?'<span style="font-size:11px;color:var(--green);">En pipeline</span>':'<button class="btn bg" style="font-size:11px;" onclick="addP(allR['+i+'],'+i+')">+ Pipeline</button>')
       +'<button class="btn bgh" style="font-size:11px;" onclick="prefill(allR['+i+'])">Pitch Builder</button>'
+      +'<button class="btn bgh" style="font-size:11px;border-color:rgba(251,191,36,0.3);color:var(--amber);" onclick="markContacted(allR['+i+'],'+i+')" title="Marcar como contactado manualmente (DM, llamada, etc.)">&#10003; Contactado</button>'
       +'</div></div><div id="ec'+i+'"></div></div>';
   });
   ra.innerHTML=html+'</div>';
@@ -930,9 +949,19 @@ async function sendEmailDirect(to,idx){
   var e=EMAILS[idx];if(!e||!to)return;
   try{
     await sendGmail(to,e.subject,e.body);
+    var today=new Date().toLocaleDateString('es-CO');
+    // Mark as contacted in pipeline
     var pi=S.pipe.findIndex(function(p){return e.kol&&p.handle===e.kol.handle;});
-    if(pi>=0&&S.pipe[pi].status==='new'){S.pipe[pi].status='contacted';S.pipe[pi].contactedAt=new Date().toLocaleDateString('es-CO');S.save();rdDash();}
-    alert('Email enviado a '+to);
+    if(pi>=0){S.pipe[pi].status='contacted';if(!S.pipe[pi].contactedAt)S.pipe[pi].contactedAt=today;S.save();}
+    // Mark as contacted in CRM registro
+    if(e.kol&&e.kol.handle){
+      var ri=S.reg.findIndex(function(r){return r.handle===e.kol.handle;});
+      if(ri>=0){S.reg[ri].status='contactado';if(!S.reg[ri].contactedAt)S.reg[ri].contactedAt=today;S.saveReg();}
+      else{S.reg.push({handle:e.kol.handle,name:e.kol.name||'',platform:e.kol.platform||'',market:e.kol.market||'',followers:e.kol.followers||'',niche:e.kol.niche||'',email:to,hasExistingDeal:!!e.kol.hasExistingDeal,currentExchange:e.kol.currentExchange||'',status:'contactado',foundAt:today,contactedAt:today,repliedAt:'',notes:'Email enviado: '+e.subject.slice(0,30)});S.saveReg();}
+    }
+    rdDash();
+    // Show confirmation with button to go to CRM
+    if(confirm('Email enviado a '+to+'. \u00bfVer en CRM?')){nav('crm',document.querySelectorAll('.nb')[3]);}
   }catch(err){alert('Error al enviar: '+err.message+'\n\nVe a Gmail en el menu lateral y conecta tu cuenta.');}
 }
 function addP(kol,idx){
