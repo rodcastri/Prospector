@@ -205,12 +205,11 @@ select option{background:var(--s2);}
   <button class="nb" onclick="nav('calendar',this)"><span class="nb-icon">&#9711;</span>Calendario</button>
   <div class="nav-sec">OUTREACH</div>
   <button class="nb" onclick="nav('prospector',this)"><span class="nb-icon">&#9675;</span>Prospector IA</button>
-  <button class="nb" onclick="nav('pipeline',this)"><span class="nb-icon">&#9671;</span>Pipeline</button>
+  <button class="nb" onclick="nav('crm',this)"><span class="nb-icon">&#9671;</span>CRM</button>
   <button class="nb" onclick="nav('pitch',this)"><span class="nb-icon">&#9673;</span>Pitch Builder</button>
   <div class="nav-sec">ESTRATEGIA</div>
   <button class="nb" onclick="nav('markets',this)"><span class="nb-icon">&#9674;</span>Mercados</button>
   <button class="nb" onclick="nav('gmail',this)"><span class="nb-icon">&#9993;</span>Gmail</button>
-  <button class="nb" onclick="nav('registro',this)"><span class="nb-icon">&#9632;</span>Registro</button>
   <div class="sb-bot">
     <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;"><div style="width:6px;height:6px;border-radius:50%;background:var(--green);"></div>Groq conectado</div>
   </div>
@@ -284,22 +283,34 @@ select option{background:var(--s2);}
   <div id="rarea"><div class="emst">Presiona Buscar para iniciar</div></div>
 </div>
 
-<!-- PIPELINE -->
-<div id="page-pipeline" class="page">
+<!-- CRM -->
+<div id="page-crm" class="page">
   <div class="ph">
-    <div class="ph-eye">GESTION DE PROSPECTOS</div>
-    <div class="ph-title">Pipeline</div>
-    <div class="ph-sub">Seguimiento completo Â· fechas automaticas Â· analisis IA de respuestas</div>
+    <div class="ph-eye">CRM UNIFICADO</div>
+    <div class="ph-title">Pipeline & Registro</div>
+    <div class="ph-sub">Historial completo · tabla + kanban · nunca contactes dos veces</div>
   </div>
-  <div class="ebar">
-    <button class="btn bbl" style="font-size:12px;" onclick="expCSV()">Exportar CSV</button>
-    <button class="btn bgh" style="font-size:12px;" onclick="scoreAll()">Scoring IA</button>
-    <button class="btn bgh" style="font-size:12px;" onclick="clrPipe()">Limpiar todo</button>
+  <div style="display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid var(--border);">
+    <button id="crm-tab-tabla" onclick="switchCRMTab('tabla')" style="padding:8px 20px;background:none;border:none;border-bottom:2px solid var(--green);color:var(--green);cursor:pointer;font-size:13px;font-weight:600;">Tabla</button>
+    <button id="crm-tab-kanban" onclick="switchCRMTab('kanban')" style="padding:8px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;font-size:13px;">Kanban</button>
   </div>
-  <div class="pboard" id="pboard"></div>
+  <div id="crm-view-tabla">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1rem;">
+      <input id="reg-search" placeholder="Buscar nombre, handle, mercado, email..." style="max-width:260px;" oninput="rdRegistro()">
+      <select id="reg-status-filter" style="width:auto;padding:8px 10px;" onchange="rdRegistro()"><option value="">Todos los estados</option><option value="nuevo">Nuevo</option><option value="contactado">Contactado</option><option value="respondio">Respondio</option><option value="negociando">Negociando</option><option value="cerrado">Cerrado</option><option value="descartado">Descartado</option></select>
+      <select id="reg-plat-filter" style="width:auto;padding:8px 10px;" onchange="rdRegistro()"><option value="">Todas las plataformas</option><option value="YouTube">YouTube</option><option value="Twitter">Twitter/X</option><option value="Telegram">Telegram</option></select>
+      <button class="btn bbl" style="font-size:12px;" onclick="expRegCSV()">Exportar CSV</button>
+      <button class="btn bgh" style="font-size:12px;" onclick="scoreAll()">Scoring IA</button>
+      <button class="btn bgh" style="font-size:12px;color:var(--red);" onclick="clrRegistro()">Limpiar</button>
+      <span id="reg-count" style="font-size:11px;color:var(--muted);"></span>
+    </div>
+    <div id="reg-table"></div>
+  </div>
+  <div id="crm-view-kanban" style="display:none;">
+    <div class="pboard" id="pboard"></div>
+  </div>
 </div>
 
-<!-- PITCH BUILDER -->
 <div id="page-pitch" class="page">
   <div class="ph">
     <div class="ph-eye">GENERADOR DE MENSAJES</div>
@@ -412,36 +423,6 @@ select option{background:var(--s2);}
   </div>
 </div>
 
-<!-- REGISTRO -->
-<div id="page-registro" class="page">
-  <div class="ph">
-    <div class="ph-eye">HISTORIAL COMPLETO</div>
-    <div class="ph-title">Registro de KOLs</div>
-    <div class="ph-sub">Cada KOL encontrado queda aqui automaticamente · sin duplicados · control total</div>
-  </div>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1rem;">
-    <input id="reg-search" placeholder="Buscar nombre, handle, mercado, email..." style="max-width:260px;" oninput="rdRegistro()">
-    <select id="reg-status-filter" style="width:auto;padding:8px 10px;" onchange="rdRegistro()">
-      <option value="">Todos los estados</option>
-      <option value="nuevo">Nuevo</option>
-      <option value="contactado">Contactado</option>
-      <option value="respondio">Respondio</option>
-      <option value="negociando">Negociando</option>
-      <option value="cerrado">Cerrado</option>
-      <option value="descartado">Descartado</option>
-    </select>
-    <select id="reg-plat-filter" style="width:auto;padding:8px 10px;" onchange="rdRegistro()">
-      <option value="">Todas las plataformas</option>
-      <option value="YouTube">YouTube</option>
-      <option value="Twitter">Twitter/X</option>
-      <option value="Telegram">Telegram</option>
-    </select>
-    <button class="btn bbl" style="font-size:12px;" onclick="expRegCSV()">Exportar CSV</button>
-    <button class="btn bgh" style="font-size:12px;color:var(--red);" onclick="clrRegistro()">Limpiar todo</button>
-    <span id="reg-count" style="font-size:11px;color:var(--muted);margin-left:4px;"></span>
-  </div>
-  <div id="reg-table"><div class="emst">Haz una busqueda en el Prospector para ver el registro.</div></div>
-</div>
 
 </main>
 </div>
@@ -696,6 +677,14 @@ function updRegNote(i,v){if(S.reg[i]){S.reg[i].notes=v;S.saveReg();}}
 function delReg(i){if(confirm('Eliminar este KOL del registro?')){S.reg.splice(i,1);S.saveReg();rdRegistro();}}
 function clrRegistro(){if(confirm('Borrar TODO el registro?')){S.reg=[];S.saveReg();rdRegistro();}}
 function expRegCSV(){if(!S.reg.length){alert('No hay datos.');return;}var hdr='N,Nombre,Handle,Plataforma,Mercado,Seguidores,Email,Estado,Encontrado,Contactado,Respondio,Notas';var rows=S.reg.map(function(r,i){return[i+1,r.name,r.handle,r.platform,r.market,r.followers,r.email,r.status,r.foundAt,r.contactedAt,r.repliedAt,r.notes].map(function(v){return'"'+(v||'').replace(/"/g,'').replace(/,/g,' ')+'"';}).join(',');});var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(hdr+'\n'+rows.join('\n'));a.download='registro_'+new Date().toISOString().slice(0,10)+'.csv';a.click();}
+function switchCRMTab(t){var isT=t==='tabla';document.getElementById('crm-view-tabla').style.display=isT?'block':'none';document.getElementById('crm-view-kanban').style.display=isT?'none':'block';var t1=document.getElementById('crm-tab-tabla'),t2=document.getElementById('crm-tab-kanban');if(t1){t1.style.borderBottomColor=isT?'var(--green)':'transparent';t1.style.color=isT?'var(--green)':'var(--muted)';t1.style.fontWeight=isT?'600':'400';}if(t2){t2.style.borderBottomColor=isT?'transparent':'var(--green)';t2.style.color=isT?'var(--muted)':'var(--green)';t2.style.fontWeight=isT?'400':'600';}if(!isT)rdPipe();}
+function rdRegistro(){var q=(document.getElementById('reg-search')||{}).value||'';var sf=(document.getElementById('reg-status-filter')||{}).value||'';var pf=(document.getElementById('reg-plat-filter')||{}).value||'';var data=S.reg.filter(function(r){return(!q||[r.name,r.handle,r.market,r.email].join(' ').toLowerCase().includes(q.toLowerCase()))&&(!sf||r.status===sf)&&(!pf||(r.platform||'').toLowerCase().includes(pf.toLowerCase()));}).slice().reverse();var cnt=document.getElementById('reg-count');if(cnt)cnt.textContent=data.length+' de '+S.reg.length+' KOLs';var el=document.getElementById('reg-table');if(!el)return;if(!data.length){el.innerHTML='<div class="emst">No hay registros aun. Haz una busqueda en el Prospector.</div>';return;}var STS2=['nuevo','contactado','respondio','negociando','cerrado','descartado'];var h2='<div style="overflow-x:auto;"><table class="reg-tbl"><thead><tr><th>#</th><th>KOL</th><th>PLATAFORMA</th><th>MERCADO</th><th>SEGUIDOR</th><th>EMAIL</th><th>ESTADO</th><th>ENCONTRADO</th><th>CONTACTADO</th><th>RESPONDIO</th><th>NOTAS</th><th></th></tr></thead><tbody>';data.forEach(function(r){var ri=S.reg.indexOf(r);var opts=STS2.map(function(s){return'<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+s.charAt(0).toUpperCase()+s.slice(1)+'</option>';}).join('');h2+='<tr><td style="color:var(--dim);font-size:10px;font-family:monospace;">'+(S.reg.length-ri)+'</td><td><div style="font-weight:600;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;">'+(r.name||r.handle)+'</div><div style="font-size:10px;color:var(--muted);">'+(r.handle||'')+'</div></td><td>'+getPlatformBadge(r.platform,r.handle)+'</td><td style="font-size:11px;color:var(--muted);white-space:nowrap;">'+(r.market||'')+'</td><td style="font-size:11px;font-family:monospace;">'+(r.followers||'')+'</td><td><input class="reg-note" value="'+(r.email||'')+'" placeholder="sin email" onchange="updRegEmail('+ri+',this.value)" style="color:'+(r.email?'var(--green)':'var(--dim)')+'"></td><td><select style="font-size:10px;padding:2px 5px;background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:5px;" onchange="updRegSt('+ri+',this.value)">'+opts+'</select></td><td style="font-size:10px;color:var(--dim);font-family:monospace;white-space:nowrap;">'+(r.foundAt||'-')+'</td><td style="font-size:10px;color:var(--blue);font-family:monospace;white-space:nowrap;">'+(r.contactedAt||'-')+'</td><td style="font-size:10px;color:var(--amber);font-family:monospace;white-space:nowrap;">'+(r.repliedAt||'-')+'</td><td><input class="reg-note" value="'+(r.notes||'')+'" placeholder="nota..." onchange="updRegNote('+ri+',this.value)"></td><td><button onclick="delReg('+ri+')" style="font-size:10px;padding:2px 6px;background:var(--rdim);border:1px solid rgba(248,113,113,0.2);border-radius:4px;color:var(--red);cursor:pointer;">X</button></td></tr>';});el.innerHTML=h2+'</tbody></table></div>';}
+function updRegSt(i,v){if(!S.reg[i])return;S.reg[i].status=v;var t=new Date().toLocaleDateString('es-CO');if(v==='contactado'&&!S.reg[i].contactedAt)S.reg[i].contactedAt=t;if(v==='respondio'&&!S.reg[i].repliedAt)S.reg[i].repliedAt=t;S.saveReg();var pi=S.pipe.findIndex(function(p){return p.handle===S.reg[i].handle;});if(pi>=0){S.pipe[pi].status=v;S.save();rdPipe();}}
+function updRegEmail(i,v){if(S.reg[i]){S.reg[i].email=v;S.saveReg();}}
+function updRegNote(i,v){if(S.reg[i]){S.reg[i].notes=v;S.saveReg();}}
+function delReg(i){if(!confirm('Eliminar este KOL?'))return;S.reg.splice(i,1);S.saveReg();rdRegistro();rdDash();}
+function clrRegistro(){if(!confirm('Borrar TODO el registro?'))return;S.reg=[];S.pipe=[];S.saveReg();S.save();rdRegistro();rdDash();}
+function expRegCSV(){if(!S.reg.length){alert('No hay datos.');return;}var hdr='N,Nombre,Handle,Plataforma,Mercado,Seguidores,Email,Estado,Encontrado,Contactado,Respondio,Notas';var rows=S.reg.map(function(r,i){return[i+1,r.name,r.handle,r.platform,r.market,r.followers,r.email,r.status,r.foundAt,r.contactedAt,r.repliedAt,r.notes].map(function(v){return'"'+(v||'').replace(/"/g,'').replace(/,/g,' ')+'"';}).join(',');});var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(hdr+'\n'+rows.join('\n'));a.download='registro_'+new Date().toISOString().slice(0,10)+'.csv';a.click();}
 window.onload=function(){
   var now=new Date(),h=now.getHours();
   var g=h<12?'Buenos dias':h<19?'Buenas tardes':'Buenas noches';
@@ -718,12 +707,11 @@ function nav(page,el){
   var pg=document.getElementById('page-'+page);
   if(pg)pg.classList.add('active');
   if(el)el.classList.add('active');
-  if(page==='pipeline')rdPipe();
+  if(page==='crm'){rdRegistro();rdPipe();}
   if(page==='dashboard')rdDash();
   if(page==='pitch')rdPlq();
   if(page==='prospector'&&allR.length)renderR(allR);
   if(page==='gmail')updateGmailStatus();
-  if(page==='registro')rdRegistro();
   if(page==='registro')rdRegistro();
 }
 
