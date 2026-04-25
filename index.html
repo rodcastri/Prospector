@@ -558,7 +558,7 @@ async function findYouTubeEmail(idx,handle){
     }else{
       if(btn){btn.disabled=false;btn.textContent='No encontrado';}
     }
-  }catch(e){if(btn){btn.disabled=false;btn.textContent='Error';}}
+  }catch(e){if(btn){btn.disabled=false;btn.textContent='No encontrado';}}
 }
 function clearSeen(){
   if(confirm('Reiniciar busqueda? Volveras a ver prospectos anteriores.')){
@@ -776,7 +776,7 @@ function renderR(kols){
       +'<div class="kst"><div class="kstv" style="font-size:10px;">'+(k.niche||'').slice(0,22)+'</div><div class="kstl">Nicho</div></div>'
       +'</div>'
       +'<div class="krsn">'+(k.reason||'')+'</div>'
-      +'<div class="keml"><span class="kemlb">EMAIL:</span>'+emailFieldHTML(k.email,i)+'</div>'
+      +'<div class="keml" id="keml'+i+'"><span class="kemlb">EMAIL:</span>'+emailFieldHTML(k.email,i)+'</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
       +'<button class="btn bgh" style="font-size:11px;" onclick="genEml('+i+',allR['+i+'])">Generar email</button>'
       +(inP(k.handle)?'<span style="font-size:11px;color:var(--green);">En pipeline</span>':'<button class="btn bg" style="font-size:11px;" onclick="addP(allR['+i+'],'+i+')">+ Pipeline</button>')
