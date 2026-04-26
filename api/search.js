@@ -1,158 +1,40 @@
-// Hybrid search: curated DB (verified) + compound-beta (dynamic discovery)
-const SEED_DB = [
-  // GLOBAL - MEGA (fallback for global searches)
-  {name:"Coin Bureau",handle:"@coinbureau",platform:"YouTube",market:"Global",tier:1,followers:"3.2M",niche:"crypto education futures",hasExistingDeal:true,currentExchange:"OKX",isGlobalBig:true,reason:"Top crypto educator",category:"mega",tags:["global","edu","futures","mega"]},
-  {name:"Rekt Capital",handle:"@rektcapital",platform:"Twitter",market:"Global",tier:1,followers:"400K",niche:"crypto TA cycles futures",hasExistingDeal:false,currentExchange:null,isGlobalBig:true,reason:"Most followed TA analyst",category:"signals",tags:["global","signals","futures"]},
-  {name:"Crypto Banter",handle:"@CryptoBanter",platform:"YouTube",market:"Global",tier:1,followers:"900K",niche:"crypto trading live futures",hasExistingDeal:true,currentExchange:"Bybit",isGlobalBig:true,reason:"Live trading show huge futures audience",category:"mega",tags:["global","mega","futures","signals"]},
-  {name:"Michaël van de Poppe",handle:"@CryptoMichNL",platform:"Twitter",market:"Europa Occidental",tier:1,followers:"700K",niche:"crypto futures trading",hasExistingDeal:true,currentExchange:"Bybit",isGlobalBig:true,reason:"Top European crypto futures trader",category:"kols",tags:["europa","futures","signals","global"]},
-  {name:"Pentoshi",handle:"@Pentosh1",platform:"Twitter",market:"EE.UU.",tier:2,followers:"350K",niche:"crypto futures trading signals",hasExistingDeal:true,currentExchange:"Bybit",isGlobalBig:false,reason:"Active futures trader engaged community",category:"signals",tags:["eeuu","futures","signals"]},
-  {name:"Scott Melker",handle:"@scottmelker",platform:"Twitter",market:"EE.UU.",tier:2,followers:"350K",niche:"crypto trading futures podcast",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Wolf of All Streets crypto podcast",category:"kols",tags:["eeuu","futures","edu"]},
-  {name:"DataDash",handle:"@DataDash",platform:"YouTube",market:"EE.UU.",tier:2,followers:"500K",niche:"crypto futures technical analysis",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Deep TA futures-focused audience",category:"kols",tags:["eeuu","futures","edu"]},
-  {name:"Crypto Kaleo",handle:"@CryptoKaleo",platform:"Twitter",market:"EE.UU.",tier:2,followers:"600K",niche:"crypto TA futures signals",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"High accuracy TA calls",category:"signals",tags:["eeuu","signals","futures"]},
-  // MID-TIER USA
-  {name:"Crypto Tony",handle:"@CryptoTony__",platform:"Twitter",market:"EE.UU.",tier:2,followers:"180K",niche:"crypto futures trading",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Active futures trader mid-tier strong community",category:"signals",tags:["eeuu","futures","signals"]},
-  {name:"Credible Crypto",handle:"@CredibleCrypto",platform:"Twitter",market:"EE.UU.",tier:2,followers:"280K",niche:"crypto Elliott Wave futures",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Elliott Wave specialist popular in futures community",category:"signals",tags:["eeuu","signals","futures"]},
-  {name:"Crypto Chase",handle:"@ChaseNugentFX",platform:"Twitter",market:"EE.UU.",tier:2,followers:"120K",niche:"crypto futures trading signals",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Mid-tier futures trader high engagement",category:"signals",tags:["eeuu","futures","signals"]},
-  {name:"Elliot Wainman",handle:"@ElliotTrades",platform:"Twitter",market:"EE.UU.",tier:2,followers:"160K",niche:"crypto trading altcoins futures",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Active altcoin futures trader",category:"kols",tags:["eeuu","futures","kols"]},
-  {name:"Crypto Rover",handle:"@crypto_rover",platform:"Twitter",market:"EE.UU.",tier:2,followers:"90K",niche:"crypto news signals daily",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Daily crypto signals accessible mid-tier",category:"signals",tags:["eeuu","signals","news"]},
-  {name:"Bluntz Capital",handle:"@Bluntz_Capital",platform:"Twitter",market:"EE.UU.",tier:2,followers:"200K",niche:"crypto Elliott Wave Bitcoin futures",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Known for accurate wave analysis futures",category:"signals",tags:["eeuu","signals","futures"]},
-  {name:"Byzantine General",handle:"@ByzGeneral",platform:"Twitter",market:"EE.UU.",tier:2,followers:"140K",niche:"crypto macro on-chain futures",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"On-chain meets futures analysis",category:"signals",tags:["eeuu","signals","futures","funds"]},
-  // TURQUIA MID
-  {name:"Satoshi Sinem",handle:"@SatoshiSinem",platform:"Twitter",market:"Turquia",tier:2,followers:"180K",niche:"crypto trading Turkish",hasExistingDeal:true,currentExchange:"Binance",isGlobalBig:false,reason:"Leading Turkish crypto voice",category:"kols",tags:["turquia","kols","signals"]},
-  {name:"Crypto TR",handle:"@CryptoTR_",platform:"YouTube",market:"Turquia",tier:2,followers:"85K",niche:"crypto futures Turkish education",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Growing Turkish futures channel",category:"edu",tags:["turquia","edu","futures"]},
-  {name:"Bitcoin TR",handle:"@bitcointr_",platform:"Twitter",market:"Turquia",tier:2,followers:"120K",niche:"Bitcoin crypto Turkish",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Active Turkish Bitcoin community",category:"kols",tags:["turquia","kols","edu"]},
-  // BRASIL MID
-  {name:"Criptomaniaco",handle:"@CriptomaniakoBR",platform:"YouTube",market:"Brasil",tier:2,followers:"650K",niche:"crypto trading Brazilian",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Top Brazilian crypto channel",category:"kols",tags:["brasil","kols","news"]},
-  {name:"Fernando Ulrich",handle:"@FernandoUlrich",platform:"Twitter",market:"Brasil",tier:2,followers:"200K",niche:"Bitcoin economics Portuguese",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Most respected Bitcoin voice Brazil",category:"edu",tags:["brasil","edu","funds"]},
-  {name:"Cryptomanual BR",handle:"@cryptomanual",platform:"YouTube",market:"Brasil",tier:2,followers:"95K",niche:"crypto futures trading Portuguese",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Mid-tier Brazilian futures educator",category:"kols",tags:["brasil","kols","futures"]},
-  // LATAM MID
-  {name:"Bit2Me",handle:"@Bit2Me_es",platform:"YouTube",market:"LATAM general",tier:2,followers:"250K",niche:"crypto education Spanish",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Spanish crypto education leader",category:"edu",tags:["latam","edu","b2b"]},
-  {name:"Crypto Hispano",handle:"@CryptoHispano_",platform:"Twitter",market:"LATAM general",tier:2,followers:"70K",niche:"crypto futures Spanish signals",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Mid-tier Spanish futures signals",category:"signals",tags:["latam","signals","futures"]},
-  {name:"Crypto Argentina",handle:"@CryptoArgentina",platform:"Twitter",market:"Argentina",tier:2,followers:"55K",niche:"crypto trading Argentina",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Active Argentine crypto community",category:"kols",tags:["latam","kols","news"]},
-  // INDIA MID
-  {name:"Crypto Dost",handle:"@CryptoDost_",platform:"YouTube",market:"India",tier:2,followers:"180K",niche:"crypto trading Hindi education",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Popular Hindi crypto education channel",category:"edu",tags:["india","edu","kols"]},
-  {name:"Altcoin Buzz India",handle:"@AltcoinBuzzIO",platform:"YouTube",market:"India",tier:2,followers:"320K",niche:"crypto altcoins India",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Large Indian crypto audience",category:"kols",tags:["india","kols","edu"]},
-  // VIETNAM MID
-  {name:"Crypto Vietnam",handle:"@CryptoVietnam_",platform:"Telegram",market:"Vietnam",tier:2,followers:"120K",niche:"crypto futures Vietnamese",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Main Vietnamese crypto futures group",category:"signals",tags:["vietnam","signals","futures"]},
-  // RUSIA MID
-  {name:"Lex Moskovski",handle:"@mskvsk",platform:"Twitter",market:"Rusia / CEI",tier:2,followers:"120K",niche:"crypto on-chain Russian institutional",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Top Russian crypto analyst",category:"funds",tags:["rusia","funds","edu"]},
-  {name:"Crypto Rus",handle:"@CryptoRus_",platform:"Telegram",market:"Rusia / CEI",tier:2,followers:"200K",niche:"crypto signals futures Russian",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Active Russian futures signals group",category:"signals",tags:["rusia","signals","futures"]},
-  // EUROPA DEL ESTE MID
-  {name:"Crypto PL",handle:"@CryptoPL_",platform:"Twitter",market:"Europa del Este",tier:2,followers:"65K",niche:"crypto futures Polish",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Growing Polish crypto futures community",category:"kols",tags:["europa","kols","futures"]},
-  // FILIPINAS MID
-  {name:"Crypto OFW",handle:"@CryptoOFW",platform:"YouTube",market:"Filipinas",tier:2,followers:"220K",niche:"crypto trading Filipino",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Top Filipino crypto channel",category:"edu",tags:["filipinas","edu","kols"]},
-  // NIGERIA MID
-  {name:"Crypto Africa",handle:"@CryptoAfricaNG",platform:"Twitter",market:"Nigeria",tier:2,followers:"80K",niche:"crypto trading Africa",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Top Nigerian crypto voice",category:"kols",tags:["nigeria","kols","news"]},
-  // PROP / FONDOS
-  {name:"FTMO Official",handle:"@FTMO_com",platform:"Twitter",market:"Global",tier:1,followers:"200K",niche:"prop trading funded accounts",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"World top prop firm community",category:"prop",tags:["global","prop","funds"]},
-  {name:"Funded Trader",handle:"@TheFundedTrader",platform:"Twitter",market:"EE.UU.",tier:2,followers:"80K",niche:"prop trading crypto futures",hasExistingDeal:false,currentExchange:null,isGlobalBig:false,reason:"Popular prop firm crypto traders",category:"prop",tags:["eeuu","prop","futures"]},
-  // COPY TRADING
-  {name:"Crypto Signals Group",handle:"@CryptoSignals",platform:"Telegram",market:"Global",tier:2,followers:"500K",niche:"crypto futures signals copy",hasExistingDeal:true,currentExchange:"Binance",isGlobalBig:false,reason:"Largest crypto signals Telegram",category:"signals",tags:["global","signals","copy","futures"]},
-];
+const MICRO_KOLS=[{name:"Crypto Chase",handle:"@ChaseNugentFX",platform:"Twitter",market:"USA",flag:"🇺🇸",followers:"28K",folNum:28000,engagement:"8.2%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:false,currentExchange:null,reason:"Active futures trader daily setups high engagement",tags:["usa","futures","signals","twitter"]},{name:"Altcoin Sherpa",handle:"@AltcoinSherpa",platform:"Twitter",market:"USA",flag:"🇺🇸",followers:"46K",folNum:46000,engagement:"7.1%",niche:"signals",contentType:["signals","futures"],hasExistingDeal:false,currentExchange:null,reason:"Mid-tier TA signals futures community no exchange deal",tags:["usa","futures","signals","twitter"]},{name:"Crypto Rand",handle:"@crypto_rand",platform:"Twitter",market:"USA",flag:"🇺🇸",followers:"32K",folNum:32000,engagement:"6.8%",niche:"signals",contentType:["signals","education"],hasExistingDeal:false,currentExchange:null,reason:"Daily crypto calls growing rapidly no major sponsors",tags:["usa","signals","education","twitter"]},{name:"Ash Crypto",handle:"@Ashcryptoreal",platform:"Twitter",market:"USA",flag:"🇺🇸",followers:"38K",folNum:38000,engagement:"7.4%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:true,currentExchange:"Binance",reason:"Active futures trader Binance deal open to better offers",tags:["usa","futures","signals","twitter"]},{name:"Crypto Jebb",handle:"@CryptoJebb",platform:"YouTube",market:"USA",flag:"🇺🇸",followers:"42K",folNum:42000,engagement:"6.5%",niche:"education",contentType:["education","futures"],hasExistingDeal:false,currentExchange:null,reason:"Growing YouTube educator covers futures and TA",tags:["usa","education","futures","youtube"]},{name:"Kyledoops",handle:"@kyledoops",platform:"Twitter",market:"USA",flag:"🇺🇸",followers:"15K",folNum:15000,engagement:"10.3%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:false,currentExchange:null,reason:"High engagement ratio futures specialist small loyal",tags:["usa","futures","signals","twitter"]},{name:"Daan Crypto Trades",handle:"@DaanCrypto",platform:"Twitter",market:"USA",flag:"🇺🇸",followers:"34K",folNum:34000,engagement:"8.0%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:true,currentExchange:"Bybit",reason:"Active futures trader Bybit deal prime poaching target",tags:["usa","futures","signals","twitter"]},{name:"Crypto Rover",handle:"@crypto_rover",platform:"Twitter",market:"USA",flag:"🇺🇸",followers:"38K",folNum:38000,engagement:"7.2%",niche:"signals",contentType:["signals","news"],hasExistingDeal:false,currentExchange:null,reason:"Daily signals and news growing audience no major deal",tags:["usa","signals","news","twitter"]},{name:"The Crypto Dog",handle:"@thecryptodog",platform:"Twitter",market:"USA",flag:"🇺🇸",followers:"43K",folNum:43000,engagement:"5.8%",niche:"signals",contentType:["signals","futures"],hasExistingDeal:false,currentExchange:null,reason:"OG crypto trader known for futures calls since 2017",tags:["usa","signals","futures","twitter"]},{name:"Leverage Larry",handle:"@LeverageLarry_",platform:"Twitter",market:"USA",flag:"🇺🇸",followers:"13K",folNum:13000,engagement:"12.8%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:false,currentExchange:null,reason:"Futures leverage specialist very active no deal",tags:["usa","futures","signals","twitter"]},{name:"FuturesAlpha",handle:"@FuturesAlpha",platform:"Telegram",market:"USA",flag:"🇺🇸",followers:"15K",folNum:15000,engagement:"11.0%",niche:"futures",contentType:["futures","signals","copy"],hasExistingDeal:false,currentExchange:null,reason:"Futures and copy trading signals tight community",tags:["usa","futures","signals","copy","telegram"]},{name:"Crypto Gareth",handle:"@GarethSolly",platform:"Twitter",market:"UK",flag:"🇬🇧",followers:"29K",folNum:29000,engagement:"7.6%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:false,currentExchange:null,reason:"UK-based futures trader daily TA growing steadily",tags:["europa","uk","futures","signals","twitter"]},{name:"CryptoGainz UK",handle:"@CryptoGainzUK",platform:"Twitter",market:"UK",flag:"🇬🇧",followers:"11K",folNum:11000,engagement:"12.0%",niche:"futures",contentType:["futures","copy"],hasExistingDeal:false,currentExchange:null,reason:"Very high engagement futures copy trading UK focus",tags:["europa","uk","futures","copy","twitter"]},{name:"Felix Hartmann",handle:"@FelixOHartmann",platform:"Twitter",market:"Alemania",flag:"🇩🇪",followers:"22K",folNum:22000,engagement:"8.8%",niche:"education",contentType:["education","futures"],hasExistingDeal:false,currentExchange:null,reason:"German crypto fund manager futures content",tags:["europa","alemania","education","futures","twitter"]},{name:"Crypto Spain",handle:"@CryptoSpain_es",platform:"Twitter",market:"Espana",flag:"🇪🇸",followers:"26K",folNum:26000,engagement:"7.4%",niche:"education",contentType:["education","futures"],hasExistingDeal:false,currentExchange:null,reason:"Spanish crypto educator futures content",tags:["europa","espana","education","futures","twitter"]},{name:"Crypto IT",handle:"@CryptoIT_aly",platform:"Twitter",market:"Italia",flag:"🇮🇹",followers:"16K",folNum:16000,engagement:"9.2%",niche:"signals",contentType:["signals","futures"],hasExistingDeal:false,currentExchange:null,reason:"Italian signals niche market low exchange competition",tags:["europa","italia","signals","futures","twitter"]},{name:"CryptoPoland",handle:"@CryptoPL_",platform:"Twitter",market:"Polonia",flag:"🇵🇱",followers:"23K",folNum:23000,engagement:"8.4%",niche:"futures",contentType:["futures","education"],hasExistingDeal:false,currentExchange:null,reason:"Polish market growing underserved by major exchanges",tags:["europa","polonia","futures","education","twitter"]},{name:"Crypto Turk",handle:"@CryptoTurkish_",platform:"Twitter",market:"Turquia",flag:"🇹🇷",followers:"41K",folNum:41000,engagement:"9.5%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:false,currentExchange:null,reason:"Turkish market very active in futures no Bitunix deal",tags:["turquia","futures","signals","twitter"]},{name:"BTC Turkey",handle:"@BTCTurkey_",platform:"Telegram",market:"Turquia",flag:"🇹🇷",followers:"33K",folNum:33000,engagement:"10.1%",niche:"signals",contentType:["signals","futures","copy"],hasExistingDeal:false,currentExchange:null,reason:"Turkish signals group very high engagement",tags:["turquia","signals","futures","copy","telegram"]},{name:"Crypto Nigeria",handle:"@CryptoNigeriaNG",platform:"Twitter",market:"Nigeria",flag:"🇳🇬",followers:"31K",folNum:31000,engagement:"10.5%",niche:"education",contentType:["education","futures"],hasExistingDeal:false,currentExchange:null,reason:"Nigeria largest crypto market in Africa huge opportunity",tags:["nigeria","africa","education","futures","twitter"]},{name:"Papi Cryptos",handle:"@PapiCryptos",platform:"Twitter",market:"Nigeria",flag:"🇳🇬",followers:"22K",folNum:22000,engagement:"11.8%",niche:"signals",contentType:["signals","futures"],hasExistingDeal:false,currentExchange:null,reason:"Nigerian signals trader very high engagement young audience",tags:["nigeria","africa","signals","futures","twitter"]},{name:"Crypto Naija",handle:"@CryptoNaija_",platform:"YouTube",market:"Nigeria",flag:"🇳🇬",followers:"25K",folNum:25000,engagement:"9.7%",niche:"education",contentType:["education","futures"],hasExistingDeal:false,currentExchange:null,reason:"Nigerian crypto education YouTube futures content popular",tags:["nigeria","africa","education","futures","youtube"]},{name:"Adeola Crypto",handle:"@AdeolaCrypto",platform:"Twitter",market:"Nigeria",flag:"🇳🇬",followers:"14K",folNum:14000,engagement:"13.5%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:false,currentExchange:null,reason:"Micro Nigerian futures trader exceptional engagement",tags:["nigeria","africa","futures","signals","twitter"]},{name:"Crypto Africa Signals",handle:"@CryptoAf_Sig",platform:"Telegram",market:"Nigeria",flag:"🇳🇬",followers:"29K",folNum:29000,engagement:"11.5%",niche:"signals",contentType:["signals","futures","copy"],hasExistingDeal:false,currentExchange:null,reason:"Pan-African futures signals Telegram no exchange deal",tags:["nigeria","africa","signals","futures","copy","telegram"]},{name:"SA Crypto",handle:"@SACrypto_ZA",platform:"Twitter",market:"Sudafrica",flag:"🇿🇦",followers:"17K",folNum:17000,engagement:"10.8%",niche:"signals",contentType:["signals","futures"],hasExistingDeal:false,currentExchange:null,reason:"South African signals trader large English-speaking market",tags:["africa","signals","futures","twitter"]},{name:"Crypto Acharya",handle:"@CryptoAcharya",platform:"YouTube",market:"India",flag:"🇮🇳",followers:"48K",folNum:48000,engagement:"8.9%",niche:"education",contentType:["education","futures"],hasExistingDeal:false,currentExchange:null,reason:"Hindi crypto educator futures tutorials massive India market",tags:["india","asia","education","futures","youtube"]},{name:"Trading Chanakya",handle:"@TradingChanakya",platform:"Twitter",market:"India",flag:"🇮🇳",followers:"27K",folNum:27000,engagement:"9.3%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:false,currentExchange:null,reason:"Indian futures trader TA-based calls very engaged",tags:["india","asia","futures","signals","twitter"]},{name:"Crypto Wazir",handle:"@CryptoWazir_",platform:"Twitter",market:"India",flag:"🇮🇳",followers:"21K",folNum:21000,engagement:"10.1%",niche:"signals",contentType:["signals","education"],hasExistingDeal:false,currentExchange:null,reason:"Indian signals creator Hindi and English content",tags:["india","asia","signals","education","twitter"]},{name:"Blockchain Baba",handle:"@BlockchainBaba_",platform:"YouTube",market:"India",flag:"🇮🇳",followers:"36K",folNum:36000,engagement:"8.4%",niche:"education",contentType:["education","futures"],hasExistingDeal:false,currentExchange:null,reason:"Popular Indian crypto educator futures focus growing",tags:["india","asia","education","futures","youtube"]},{name:"India Crypto Bull",handle:"@IndiaCryptoBull",platform:"Telegram",market:"India",flag:"🇮🇳",followers:"34K",folNum:34000,engagement:"10.7%",niche:"signals",contentType:["signals","futures","copy"],hasExistingDeal:false,currentExchange:null,reason:"Indian futures signals group copy trading features",tags:["india","asia","signals","futures","copy","telegram"]},{name:"Mumbai Crypto",handle:"@MumbaiCrypto_",platform:"Twitter",market:"India",flag:"🇮🇳",followers:"16K",folNum:16000,engagement:"11.6%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:false,currentExchange:null,reason:"Mumbai-based futures trader very active community",tags:["india","asia","futures","signals","twitter"]},{name:"Crypto Vietnam 24h",handle:"@CryptoVN24h",platform:"Telegram",market:"Vietnam",flag:"🇻🇳",followers:"45K",folNum:45000,engagement:"12.5%",niche:"signals",contentType:["signals","futures","copy"],hasExistingDeal:false,currentExchange:null,reason:"Largest Vietnamese crypto Telegram futures focus",tags:["vietnam","asia","signals","futures","copy","telegram"]},{name:"Tien Ao VN",handle:"@TienAoVN",platform:"YouTube",market:"Vietnam",flag:"🇻🇳",followers:"38K",folNum:38000,engagement:"9.2%",niche:"education",contentType:["education","futures"],hasExistingDeal:false,currentExchange:null,reason:"Vietnamese crypto education futures tutorials",tags:["vietnam","asia","education","futures","youtube"]},{name:"Crypto Saigon",handle:"@CryptoSaigon_",platform:"Twitter",market:"Vietnam",flag:"🇻🇳",followers:"24K",folNum:24000,engagement:"11.3%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:true,currentExchange:"Gate.io",reason:"Vietnamese futures trader Gate.io deal can be approached",tags:["vietnam","asia","futures","signals","twitter"]},{name:"BlockchainVN",handle:"@BlockchainVN_",platform:"Telegram",market:"Vietnam",flag:"🇻🇳",followers:"29K",folNum:29000,engagement:"13.0%",niche:"education",contentType:["education","futures"],hasExistingDeal:false,currentExchange:null,reason:"Vietnamese blockchain education future-ready audience",tags:["vietnam","asia","education","futures","telegram"]},{name:"Crypto Indonesia",handle:"@CryptoIndo_",platform:"Telegram",market:"Indonesia",flag:"🇮🇩",followers:"50K",folNum:50000,engagement:"11.0%",niche:"education",contentType:["education","signals"],hasExistingDeal:false,currentExchange:null,reason:"Massive Indonesian crypto community education focus",tags:["indonesia","asia","education","signals","telegram"]},{name:"Bitcoin ID Trader",handle:"@BitcoinIDTrader",platform:"Twitter",market:"Indonesia",flag:"🇮🇩",followers:"33K",folNum:33000,engagement:"9.8%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:false,currentExchange:null,reason:"Indonesian futures trader with engaged following",tags:["indonesia","asia","futures","signals","twitter"]},{name:"Kripto Pintar",handle:"@KriptoPintar_",platform:"YouTube",market:"Indonesia",flag:"🇮🇩",followers:"41K",folNum:41000,engagement:"8.6%",niche:"education",contentType:["education","futures"],hasExistingDeal:false,currentExchange:null,reason:"Popular Indonesian crypto education YouTube",tags:["indonesia","asia","education","futures","youtube"]},{name:"Sinyal Crypto ID",handle:"@SinyalCryptoID",platform:"Telegram",market:"Indonesia",flag:"🇮🇩",followers:"27K",folNum:27000,engagement:"12.7%",niche:"signals",contentType:["signals","futures","copy"],hasExistingDeal:false,currentExchange:null,reason:"Indonesian futures signals copy trading very popular",tags:["indonesia","asia","signals","futures","copy","telegram"]},{name:"Crypto Pilipinas",handle:"@CryptoPilipinas",platform:"YouTube",market:"Filipinas",flag:"🇵🇭",followers:"39K",folNum:39000,engagement:"9.4%",niche:"education",contentType:["education","futures"],hasExistingDeal:false,currentExchange:null,reason:"Top Filipino crypto YouTube futures content popular",tags:["filipinas","asia","education","futures","youtube"]},{name:"Bitskwela",handle:"@Bitskwela",platform:"YouTube",market:"Filipinas",flag:"🇵🇭",followers:"46K",folNum:46000,engagement:"8.1%",niche:"education",contentType:["education","signals"],hasExistingDeal:false,currentExchange:null,reason:"Filipino crypto school format very loyal audience",tags:["filipinas","asia","education","signals","youtube"]},{name:"Kuya Crypto PH",handle:"@KuyaCryptoPH",platform:"Twitter",market:"Filipinas",flag:"🇵🇭",followers:"20K",folNum:20000,engagement:"11.4%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:false,currentExchange:null,reason:"Filipino futures trader PH market growing fast",tags:["filipinas","asia","futures","signals","twitter"]},{name:"PH Crypto Signals",handle:"@PHCryptoSignals",platform:"Telegram",market:"Filipinas",flag:"🇵🇭",followers:"23K",folNum:23000,engagement:"12.9%",niche:"signals",contentType:["signals","copy","futures"],hasExistingDeal:false,currentExchange:null,reason:"Philippine futures signals Telegram copy trading",tags:["filipinas","asia","signals","copy","futures","telegram"]},{name:"Crypto Pakistan",handle:"@CryptoPakistan_",platform:"YouTube",market:"Pakistan",flag:"🇵🇰",followers:"32K",folNum:32000,engagement:"10.2%",niche:"education",contentType:["education","futures"],hasExistingDeal:false,currentExchange:null,reason:"Pakistan huge crypto adoption education channel no deal",tags:["pakistan","asia","education","futures","youtube"]},{name:"Crypto PK Signals",handle:"@CryptoPKSig",platform:"Telegram",market:"Pakistan",flag:"🇵🇰",followers:"26K",folNum:26000,engagement:"13.4%",niche:"signals",contentType:["signals","futures","copy"],hasExistingDeal:false,currentExchange:null,reason:"Pakistan futures signals very underserved by exchanges",tags:["pakistan","asia","signals","futures","copy","telegram"]},{name:"Pakistan Crypto",handle:"@PakistanCrypto_",platform:"Twitter",market:"Pakistan",flag:"🇵🇰",followers:"18K",folNum:18000,engagement:"11.9%",niche:"education",contentType:["education","signals"],hasExistingDeal:false,currentExchange:null,reason:"Pakistani educator English and Urdu content",tags:["pakistan","asia","education","signals","twitter"]},{name:"100x Hunter",handle:"@100xHunter_",platform:"Twitter",market:"Global",flag:"🌐",followers:"23K",folNum:23000,engagement:"9.4%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:false,currentExchange:null,reason:"Altcoin futures calls global audience no deal",tags:["global","futures","signals","twitter"]},{name:"Futures Oracle",handle:"@FuturesOracle_",platform:"Telegram",market:"Global",flag:"🌐",followers:"17K",folNum:17000,engagement:"13.6%",niche:"futures",contentType:["futures","signals","copy"],hasExistingDeal:false,currentExchange:null,reason:"Futures-only Telegram very focused niche",tags:["global","futures","signals","copy","telegram"]},{name:"Crypto Leverage Pro",handle:"@CryptoLevPro",platform:"Twitter",market:"Global",flag:"🌐",followers:"9K",folNum:9000,engagement:"15.1%",niche:"futures",contentType:["futures","signals"],hasExistingDeal:false,currentExchange:null,reason:"Extremely high engagement micro-KOL futures leverage calls",tags:["global","futures","signals","twitter"]},{name:"CryptoSensei",handle:"@CryptoSensei_",platform:"YouTube",market:"Global",flag:"🌐",followers:"22K",folNum:22000,engagement:"8.5%",niche:"education",contentType:["education","futures"],hasExistingDeal:false,currentExchange:null,reason:"English crypto education futures tutorials no deal",tags:["global","education","futures","youtube"]},{name:"SEA Crypto Signals",handle:"@SEACryptoSig",platform:"Telegram",market:"Asia",flag:"🌏",followers:"42K",folNum:42000,engagement:"10.4%",niche:"signals",contentType:["signals","futures","copy"],hasExistingDeal:false,currentExchange:null,reason:"Pan-SEA signals Vietnam Philippines Indonesia",tags:["asia","signals","futures","copy","telegram"]},{name:"Delhi Crypto",handle:"@DelhiCrypto_",platform:"Telegram",market:"India",flag:"🇮🇳",followers:"19K",folNum:19000,engagement:"12.0%",niche:"signals",contentType:["signals","copy"],hasExistingDeal:false,currentExchange:null,reason:"Delhi crypto signals copy trading group",tags:["india","asia","signals","copy","telegram"]},{name:"Crypto Ghana",handle:"@CryptoGhana_",platform:"Twitter",market:"Ghana",flag:"🇬🇭",followers:"9K",folNum:9000,engagement:"14.2%",niche:"education",contentType:["education","signals"],hasExistingDeal:false,currentExchange:null,reason:"Ghanaian crypto community high engagement untapped",tags:["africa","education","signals","twitter"]},{name:"CryptoKE",handle:"@CryptoKE_",platform:"Telegram",market:"Kenya",flag:"🇰🇪",followers:"12K",folNum:12000,engagement:"13.1%",niche:"signals",contentType:["signals","copy"],hasExistingDeal:false,currentExchange:null,reason:"Kenyan signals group copy trading fast growing",tags:["africa","signals","copy","telegram"]}];
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+function scoreKOL(k,mktTags,nicheTags,platTags){
+  var score=0,kTags=k.tags||[];
+  var fn=['futures','signals','copy'];
+  var fScore=k.contentType.filter(function(c){return fn.includes(c);}).length;
+  score+=fScore*10;
+  var eng=parseFloat(k.engagement||'0');
+  if(eng>=10)score+=20;else if(eng>=7)score+=15;else if(eng>=5)score+=10;else score+=5;
+  var em=['nigeria','india','vietnam','indonesia','filipinas','pakistan','africa','tailandia'];
+  if(kTags.some(function(t){return em.includes(t);}))score+=15;
+  else if(kTags.includes('global'))score+=8;else score+=5;
+  if(!k.hasExistingDeal)score+=15;else score+=5;
+  if(mktTags.length>0){var mm=mktTags.some(function(mt){return kTags.includes(mt)||kTags.includes('global');});if(mm)score+=20;else score-=30;}
+  if(nicheTags.length>0){var nm=nicheTags.some(function(n){return k.contentType.includes(n);});if(nm)score+=15;}
+  if(platTags.length>0){if(platTags.includes(k.platform.toLowerCase()))score+=10;}
+  if(k.folNum>=5000&&k.folNum<=50000)score+=5;
+  return Object.assign({},k,{score:Math.max(1,Math.min(10,Math.round(score/12))),rawScore:score});
+}
 
-  const key = process.env.GROQ_API_KEY;
-  if (!key) return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
-
-  const { cats, mkts } = req.body || {};
-  const catKeys = (cats || []).map(c => c.toLowerCase());
-  const mktNames = (mkts || []).map(m => m.toLowerCase());
-
-  // Map market names to tags
-  const mktMap = {
-    'eeuu': m => m.includes('ee.uu') || m.includes('estad') || m.includes('usa'),
-    'turquia': m => m.includes('turqu'),
-    'brasil': m => m.includes('brasil'),
-    'india': m => m.includes('india'),
-    'vietnam': m => m.includes('vietnam'),
-    'rusia': m => m.includes('rusia') || m.includes('cei'),
-    'latam': m => m.includes('argent') || m.includes('latam') || m.includes('colombia') || m.includes('mexico'),
-    'filipinas': m => m.includes('filipo'),
-    'indonesia': m => m.includes('indo'),
-    'nigeria': m => m.includes('nigeria') || m.includes('africa'),
-    'europa': m => m.includes('europa'),
-    'pakistan': m => m.includes('pakis'),
-  };
-  const mktTags = Object.keys(mktMap).filter(tag => mktNames.some(mktMap[tag]));
-  if (!mktTags.length) mktTags.push('global');
-
-  // Map category names to tags
-  const catMap = {
-    'kols': c => c.includes('kol') || c.includes('futuro'),
-    'mega': c => c.includes('mega') || c.includes('global'),
-    'funds': c => c.includes('fondo') || c.includes('fund'),
-    'prop': c => c.includes('prop'),
-    'signals': c => c.includes('senal') || c.includes('signal'),
-    'edu': c => c.includes('educ'),
-    'copy': c => c.includes('copy'),
-    'b2b': c => c.includes('b2b') || c.includes('partner'),
-  };
-  const catTags = Object.keys(catMap).filter(tag => catKeys.some(catMap[tag]));
-  if (!catTags.length) catTags.push('kols', 'signals', 'futures');
-
-  // Score curated DB
-  const scored = SEED_DB.map(k => {
-    let score = 0;
-    const kTags = k.tags || [];
-    if (kTags.includes('global')) score += 3;
-    mktTags.forEach(mt => { if (kTags.includes(mt)) score += 12; });
-    catTags.forEach(ct => { if (kTags.includes(ct) || k.category === ct) score += 6; });
-    // Prefer mid-tier (more accessible)
-    score += k.tier === 2 ? 4 : 2;
-    if (!k.hasExistingDeal) score += 3;
-    score += Math.random() * 3; // variety
-    return { ...k, _score: score };
-  });
-  scored.sort((a, b) => b._score - a._score);
-  const seedResults = scored.filter(k => k._score > 3).slice(0, 6);
-
-  // Dynamic discovery with compound-beta (finds NEW accounts)
-  const mktLabel = mkts?.slice(0,2).join(' and ') || 'global';
-  const nicheFocus = catTags.includes('futures') ? 'crypto futures leverage trading' : catTags.includes('signals') ? 'crypto trading signals' : catTags.includes('prop') ? 'prop trading funded accounts' : 'crypto trading';
-  
-  let compoundResults = [];
-  try {
-    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'compound-beta',
-        messages: [{
-          role: 'user',
-          content: `Search Twitter, YouTube, and Telegram right now for ACTIVE ${nicheFocus} influencers in ${mktLabel} with between 15,000 and 300,000 followers/subscribers. Find accounts that are NOT super famous - mid-tier creators who post regularly in 2025 about crypto futures or trading. I need their exact verified username handles.
-
-Return ONLY a JSON array of 4 people you actually found in search results:
-[{"name":"Real Name","handle":"@exacthandle","platform":"Twitter","market":"${mkts?.[0]||'Global'}","tier":2,"followers":"45K","engagement":"Alto 7%","niche":"${nicheFocus}","email":null,"hasExistingDeal":false,"currentExchange":null,"isGlobalBig":false,"reason":"Why they fit Bitunix futures outreach","category":"signals"}]
-JSON only:`
-        }],
-        temperature: 0.1,
-        max_tokens: 1500
-      })
-    });
-    const data = await r.json();
-    const text = (data.choices?.[0]?.message?.content || '').replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
-    const s = text.indexOf('['), e = text.lastIndexOf(']');
-    if (s >= 0 && e > s) {
-      const parsed = JSON.parse(text.slice(s, e+1));
-      compoundResults = parsed.filter(k => k?.handle && k?.name && k.handle.startsWith('@'));
-    }
-  } catch(e) {}
-
-  // Merge: compound first (fresh), then seed
-  const seen = new Set();
-  const merged = [];
-  [...compoundResults, ...seedResults].forEach(k => {
-    if (!k?.handle) return;
-    const key2 = k.handle.toLowerCase().replace('@','');
-    if (!seen.has(key2)) { seen.add(key2); merged.push(k); }
-  });
-
-  const results = merged.slice(0, 10).map(({ _score, tags, ...k }) => ({ ...k, email: k.email || null }));
-  return res.status(200).json({ results, dynamic: compoundResults.length, curated: seedResults.length });
+export default async function handler(req,res){
+  res.setHeader('Access-Control-Allow-Origin','*');
+  res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers','Content-Type');
+  if(req.method==='OPTIONS')return res.status(200).end();
+  if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
+  var body=req.body||{};
+  var markets=body.markets||[],niches=body.niches||[],platforms=body.platforms||[],dealFilter=body.dealFilter||'all';
+  var mktMap={USA:['usa'],UK:['uk','europa'],Europa:['europa'],Nigeria:['nigeria','africa'],Africa:['africa'],India:['india','asia'],Vietnam:['vietnam','asia'],Indonesia:['indonesia','asia'],Filipinas:['filipinas','asia'],Pakistan:['pakistan','asia'],Turquia:['turquia'],Asia:['asia'],Global:['global']};
+  var mktTags=[...new Set(markets.flatMap(function(m){return mktMap[m]||[m.toLowerCase()];}))];
+  var nicheTags=niches.map(function(n){return n.toLowerCase();}).filter(function(n){return['futures','signals','education','copy'].includes(n);});
+  var platTags=platforms.map(function(p){return p.toLowerCase();});
+  var results=MICRO_KOLS.map(function(k){return scoreKOL(k,mktTags,nicheTags,platTags);});
+  if(dealFilter==='nodeal')results=results.filter(function(k){return !k.hasExistingDeal;});
+  else if(dealFilter==='hasdeal')results=results.filter(function(k){return k.hasExistingDeal;});
+  results.sort(function(a,b){if(b.score!==a.score)return b.score-a.score;return b.rawScore-a.rawScore;});
+  results=results.filter(function(k){return k.score>=4;});
+  var clean=results.slice(0,12).map(function(k){var r=Object.assign({},k);delete r.rawScore;delete r.tags;r.email=r.email||null;return r;});
+  return res.status(200).json({results:clean,total:results.length,source:'curated_micro_db_v2'});
 }
