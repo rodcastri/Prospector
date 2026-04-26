@@ -172,6 +172,23 @@ select option{background:var(--s2);}
 .mtgs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px;}
 .mtg{font-size:9px;padding:2px 7px;border-radius:99px;background:var(--s2);border:1px solid var(--border);color:var(--muted);}
 .mnote{font-size:11px;color:var(--dim);line-height:1.5;}
+.ptab{padding:6px 14px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r2);color:var(--muted);cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;transition:all 0.2s;}
+.ptab-active{background:rgba(127,255,106,0.08);border-color:rgba(127,255,106,0.25);color:var(--green);}
+.pfilt-box{background:var(--s2);border:1px solid var(--border);border-radius:var(--r2);padding:1rem;margin-bottom:1.2rem;}
+.pfilt-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:12px;}
+.pfilt-row:last-child{margin-bottom:0;}
+.pfilt-group{display:flex;flex-direction:column;gap:6px;flex:1;min-width:200px;}
+.pfilt-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{padding:4px 10px;background:var(--s1);border:1px solid var(--border);border-radius:99px;color:var(--muted);cursor:pointer;font-size:11px;font-family:'Inter',sans-serif;transition:all 0.15s;}
+.chip-on{background:rgba(127,255,106,0.08);border-color:rgba(127,255,106,0.3);color:var(--green);}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.kcard2{background:var(--s2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;position:relative;transition:border-color 0.2s;}
+.kcard2:hover{border-color:rgba(127,255,106,0.25);}
+.kbadge{font-size:9px;padding:2px 7px;border-radius:99px;border:1px solid;display:inline-block;}
+.kbtn-sm{font-size:11px;padding:4px 10px;border-radius:var(--r);border:1px solid var(--border);background:var(--s1);color:var(--text);cursor:pointer;text-decoration:none;display:inline-block;font-family:'Inter',sans-serif;transition:all 0.15s;}
+.kbtn-primary{border-color:rgba(255,255,255,0.15);color:var(--text);}
+.kbtn-primary:hover{border-color:rgba(127,255,106,0.4);color:var(--green);}
+.kbtn-add{border-color:rgba(127,255,106,0.25);color:var(--green);background:rgba(127,255,106,0.06);}
 .reg-tbl{width:100%;border-collapse:collapse;font-size:12px;}
 .reg-tbl th{text-align:left;font-size:9px;letter-spacing:0.1em;color:var(--dim);padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
 .reg-tbl td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
@@ -262,41 +279,73 @@ select option{background:var(--s2);}
 
 <!-- PROSPECTOR -->
 <div id="page-prospector" class="page">
-  <div class="ph">
-    <div class="ph-eye">BUSQUEDA INTELIGENTE</div>
-    <div class="ph-title">Prospector IA</div>
-    <div class="ph-sub">Groq AI Â· KOLs activos hoy Â· detecta acuerdos existentes Â· links directos a redes</div>
+  <div class="ph"><div class="ph-eye">BD OUTREACH ENGINE</div><div class="ph-title">Prospector v2</div><div class="ph-sub">77 micro-KOLs verificados 5K-50K · scoring IA · filtros precisos</div></div>
+  <div style="display:flex;gap:6px;margin-bottom:1.2rem;flex-wrap:wrap;">
+    <button id="ptab-search" class="ptab ptab-active" onclick="switchPTab('search')">🔍 Buscar KOLs</button>
+    <button id="ptab-opp" class="ptab" onclick="switchPTab('opp')">🎯 Oportunidades</button>
+    <button id="ptab-manual" class="ptab" onclick="switchPTab('manual')">➕ Agregar KOL</button>
   </div>
-  <div class="pbox">
-    <div class="auto-banner"><span class="auto-pill">AUTO</span><span style="font-size:13px;color:var(--muted);">La IA selecciona los mejores perfiles. Ajusta manualmente si quieres.</span></div>
-    <div class="sl">TIPO DE SOCIO</div>
-    <div class="cat-grid" id="cgrid"></div>
-    <div class="sl">MERCADO OBJETIVO</div>
-    <div class="mwrap" id="mwrap"></div>
-    <div class="sacts">
-      <button class="btn bg" id="bs1" onclick="runSearch(false)">Buscar (10 KOLs)</button>
-      <button class="btn bam" id="bs2" onclick="runSearch(true)">Lote ~100 KOLs</button>
-      <button class="btn bgh" onclick="clearSeen()">Reiniciar busqueda</button>
-    </div>
-    <div style="margin-top:1rem;padding:1rem;background:var(--s2);border:1px solid var(--border);border-radius:var(--r2);">
-      <div class="sl" style="margin-bottom:10px;">AGREGAR KOL MANUALMENTE — pega un handle y busca sus datos automaticamente</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
-        <div style="flex:1;min-width:180px;">
-          <label class="pflbl">HANDLE o NOMBRE</label>
-          <input id="manual-handle" placeholder="@handle o nombre del KOL..." style="margin-bottom:0;">
-        </div>
-        <div style="min-width:140px;">
-          <label class="pflbl">PLATAFORMA</label>
-          <select id="manual-platform" style="margin-bottom:0;"><option value="">Auto-detectar</option><option value="YouTube">YouTube</option><option value="Twitter">Twitter/X</option><option value="Telegram">Telegram</option><option value="Instagram">Instagram</option><option value="TikTok">TikTok</option></select>
-        </div>
-        <button class="btn bg" id="manual-btn" onclick="addManualKOL()" style="flex-shrink:0;">Buscar datos</button>
-        <button class="btn bgh" onclick="addManualQuick()" style="flex-shrink:0;" title="Agregar sin buscar datos, directo al CRM">+ Al CRM directo</button>
+  <div id="ptab-search-content">
+    <div class="pfilt-box">
+      <div class="pfilt-row">
+        <div class="pfilt-group"><div class="pflbl">MERCADO</div><div class="pfilt-chips" id="mkt-chips">
+          <button class="chip" data-val="USA" onclick="toggleChip(this,'mkt')">🇺🇸 USA</button>
+          <button class="chip" data-val="UK" onclick="toggleChip(this,'mkt')">🇬🇧 UK</button>
+          <button class="chip" data-val="Europa" onclick="toggleChip(this,'mkt')">🇪🇺 Europa</button>
+          <button class="chip" data-val="Nigeria" onclick="toggleChip(this,'mkt')">🇳🇬 Nigeria</button>
+          <button class="chip" data-val="India" onclick="toggleChip(this,'mkt')">🇮🇳 India</button>
+          <button class="chip" data-val="Vietnam" onclick="toggleChip(this,'mkt')">🇻🇳 Vietnam</button>
+          <button class="chip" data-val="Indonesia" onclick="toggleChip(this,'mkt')">🇮🇩 Indonesia</button>
+          <button class="chip" data-val="Filipinas" onclick="toggleChip(this,'mkt')">🇵🇭 Filipinas</button>
+          <button class="chip" data-val="Pakistan" onclick="toggleChip(this,'mkt')">🇵🇰 Pakistan</button>
+          <button class="chip" data-val="Turquia" onclick="toggleChip(this,'mkt')">🇹🇷 Turquía</button>
+          <button class="chip" data-val="Global" onclick="toggleChip(this,'mkt')">🌐 Global</button>
+        </div></div>
+        <div class="pfilt-group"><div class="pflbl">NICHO</div><div class="pfilt-chips" id="niche-chips">
+          <button class="chip chip-on" data-val="futures" onclick="toggleChip(this,'niche')">⚡ Futuros/Leverage</button>
+          <button class="chip chip-on" data-val="signals" onclick="toggleChip(this,'niche')">📡 Señales/Copy</button>
+          <button class="chip chip-on" data-val="education" onclick="toggleChip(this,'niche')">📚 Educación</button>
+        </div></div>
       </div>
-      <div id="manual-result" style="margin-top:10px;min-height:0;"></div>
+      <div class="pfilt-row">
+        <div class="pfilt-group"><div class="pflbl">PLATAFORMA</div><div class="pfilt-chips" id="plat-chips">
+          <button class="chip chip-on" data-val="Twitter" onclick="toggleChip(this,'plat')">𝕏 Twitter/X</button>
+          <button class="chip chip-on" data-val="YouTube" onclick="toggleChip(this,'plat')">▶ YouTube</button>
+          <button class="chip chip-on" data-val="Telegram" onclick="toggleChip(this,'plat')">✈ Telegram</button>
+        </div></div>
+        <div class="pfilt-group"><div class="pflbl">FILTROS</div><div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <select id="pf-deal" style="font-size:11px;padding:5px 8px;width:auto;"><option value="all">Todos los deals</option><option value="nodeal" selected>Sin acuerdo previo</option><option value="hasdeal">Con acuerdo (poaching)</option></select>
+          <select id="pf-contact" style="font-size:11px;padding:5px 8px;width:auto;"><option value="new" selected>Nuevos</option><option value="contacted">Ya contactados</option><option value="all">Todos</option></select>
+        </div></div>
+        <div class="pfilt-group" style="justify-content:flex-end;align-items:flex-end;"><button class="btn bg" style="height:36px;padding:0 20px;" onclick="runProspectorSearch()">Buscar</button></div>
+      </div>
+    </div>
+    <div id="p-results-header" style="display:none;margin-bottom:12px;font-size:12px;color:var(--muted);"></div>
+    <div id="p-results" class="kgrid"></div>
+  </div>
+  <div id="ptab-opp-content" style="display:none;">
+    <div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--r2);padding:1.2rem;margin-bottom:1rem;">
+      <div style="font-weight:600;font-size:13px;margin-bottom:8px;">🎯 KOLs con quejas de su exchange actual</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Busca en Twitter KOLs quejandose de Binance, Bybit, OKX — estan abiertos a cambiar de exchange.</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="opp-market" style="font-size:12px;padding:6px 10px;width:auto;"><option value="global">Cualquier mercado</option><option value="usa">USA</option><option value="nigeria">Nigeria</option><option value="india">India</option><option value="vietnam">Vietnam</option><option value="europe">Europa</option></select>
+        <button class="btn bg" onclick="searchOpportunities()">🔍 Buscar oportunidades</button>
+      </div>
+    </div>
+    <div id="opp-results"><div class="emst">Haz clic en Buscar oportunidades.</div></div>
+  </div>
+  <div id="ptab-manual-content" style="display:none;">
+    <div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--r2);padding:1.2rem;max-width:500px;">
+      <div style="font-weight:600;font-size:13px;margin-bottom:4px;">Agregar KOL por handle</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Pega el handle y compound-beta busca sus datos automaticamente.</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div><label class="pflbl">HANDLE o NOMBRE</label><input id="manual-handle" placeholder="@handle..." style="margin:0;"></div>
+        <div><label class="pflbl">PLATAFORMA</label><select id="manual-platform" style="margin:0;"><option value="">Auto-detectar</option><option value="Twitter">Twitter/X</option><option value="YouTube">YouTube</option><option value="Telegram">Telegram</option></select></div>
+        <div style="display:flex;gap:8px;"><button class="btn bg" id="manual-btn" onclick="addManualKOL()" style="flex:1;">Buscar datos</button><button class="btn bgh" onclick="addManualQuick()">+ Al CRM directo</button></div>
+      </div>
+      <div id="manual-result" style="margin-top:12px;"></div>
     </div>
   </div>
-  <div class="bprog" id="bprog"></div>
-  <div id="rarea"><div class="emst">Presiona Buscar para iniciar</div></div>
 </div>
 
 <!-- CRM -->
@@ -788,6 +837,122 @@ function confirmAddManual(kol){
   document.getElementById('manual-handle').value='';
   rdDash();
 }
+
+var P={mkt:[],niche:['futures','signals','education'],plat:['Twitter','YouTube','Telegram'],results:[]};
+
+function switchPTab(tab){
+  ['search','opp','manual'].forEach(function(t){
+    var c=document.getElementById('ptab-'+t+'-content');
+    if(c)c.style.display=t===tab?'block':'none';
+    var b=document.getElementById('ptab-'+t);
+    if(b){b.classList.toggle('ptab-active',t===tab);}
+  });
+}
+function toggleChip(el,group){
+  el.classList.toggle('chip-on');
+  var vals=Array.from(document.querySelectorAll('#'+group+'-chips .chip-on')).map(function(c){return c.dataset.val;});
+  if(group==='mkt')P.mkt=vals;
+  else if(group==='niche')P.niche=vals;
+  else if(group==='plat')P.plat=vals;
+}
+function scoreColor(s){return s>=8?'var(--green)':s>=6?'var(--amber)':'var(--red)';}
+function scoreBg(s){return s>=8?'rgba(127,255,106,0.12)':s>=6?'rgba(251,191,36,0.1)':'rgba(248,113,113,0.1)';}
+function platIcon(p){p=(p||'').toLowerCase();if(p.includes('twitter')||p==='x')return '𝕏';if(p.includes('youtube'))return '▶';if(p.includes('telegram'))return '✈';return '🔗';}
+function platUrl(platform,handle){var h=(handle||'').replace('@','');var p=(platform||'').toLowerCase();if(p.includes('twitter'))return 'https://x.com/'+h;if(p.includes('youtube'))return 'https://youtube.com/@'+h;if(p.includes('telegram'))return 'https://t.me/'+h;return '#';}
+function getContactStatus(handle){if(!S.reg)return null;return S.reg.find(function(r){return r.handle===handle;})||null;}
+
+function renderKolCard(k,idx){
+  var ct=getContactStatus(k.handle);
+  var isC=ct&&ct.status!=='nuevo';
+  var url=platUrl(k.platform,k.handle);
+  var sc=k.score||5;
+  var engNum=parseFloat(k.engagement||'0');
+  var engColor=engNum>=10?'var(--green)':engNum>=7?'var(--amber)':'var(--muted)';
+  var dealBadge=k.hasExistingDeal
+    ?'<span class="kbadge" style="background:rgba(251,191,36,0.1);color:var(--amber);border-color:rgba(251,191,36,0.25);">Deal: '+k.currentExchange+'</span>'
+    :'<span class="kbadge" style="background:rgba(127,255,106,0.08);color:var(--green);border-color:rgba(127,255,106,0.25);">Sin acuerdo</span>';
+  var cBadge=isC?'<span class="kbadge" style="background:rgba(96,165,250,0.1);color:var(--blue);border-color:rgba(96,165,250,0.25);">✓ Contactado</span>':'';
+  return '<div class="kcard2" id="kc2_'+idx+'">'
+    +'<div style="position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:50%;background:'+scoreBg(sc)+';border:1.5px solid '+scoreColor(sc)+';display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:'+scoreColor(sc)+';">'+sc+'</div>'
+    +'<div style="padding-right:38px;margin-bottom:6px;"><div style="font-weight:700;font-size:13px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(k.flag||'')+' '+(k.name||k.handle)+'</div>'
+    +'<a href="'+url+'" target="_blank" style="font-size:11px;color:var(--muted);text-decoration:none;">'+(k.platform||'')+' · '+(k.handle||'')+'</a></div>'
+    +'<div style="display:flex;gap:12px;margin-bottom:6px;font-family:monospace;">'
+    +'<div style="font-size:11px;"><span style="color:var(--dim);">Seg</span> <b>'+k.followers+'</b></div>'
+    +'<div style="font-size:11px;"><span style="color:var(--dim);">Eng</span> <b style="color:'+engColor+'">'+k.engagement+'</b></div></div>'
+    +'<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">'+((k.niche||'').toUpperCase())+' · '+(k.market||k.flag||'')+'</div>'
+    +'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">'+dealBadge+cBadge+'</div>'
+    +'<div style="font-size:10px;color:var(--dim);line-height:1.4;margin-bottom:10px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">'+(k.reason||'')+'</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+    +'<a href="'+url+'" target="_blank" class="kbtn-sm kbtn-primary">Ver perfil ↗</a>'
+    +(isC
+      ?'<span class="kbtn-sm" style="color:var(--green);border-color:rgba(127,255,106,0.2);">✓ En CRM</span>'
+      :'<button class="kbtn-sm kbtn-add" onclick="addToCRM2('+idx+')">+ CRM</button>')
+    +'<button class="kbtn-sm" style="color:var(--amber);border-color:rgba(251,191,36,0.2);" onclick="markContacted2('+idx+')">✓ Contactado</button>'
+    +'</div></div>';
+}
+
+async function runProspectorSearch(){
+  var dealF=document.getElementById('pf-deal')?.value||'nodeal';
+  var contactF=document.getElementById('pf-contact')?.value||'new';
+  var el=document.getElementById('p-results');
+  var hdr=document.getElementById('p-results-header');
+  if(el)el.innerHTML='<div class="emst"><span class="spin"></span> Buscando KOLs...</div>';
+  if(hdr)hdr.style.display='none';
+  try{
+    var r=await fetch(API_BASE+'/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({markets:P.mkt,niches:P.niche,platforms:P.plat,dealFilter:dealF,contactFilter:contactF})});
+    var d=await r.json();
+    var results=d.results||[];
+    P.results=results;
+    if(contactF==='new')results=results.filter(function(k){var c=getContactStatus(k.handle);return !c||c.status==='nuevo';});
+    else if(contactF==='contacted')results=results.filter(function(k){var c=getContactStatus(k.handle);return c&&c.status!=='nuevo';});
+    var today=new Date().toLocaleDateString('es-CO');
+    results.forEach(function(k){if(!k.handle)return;var ex=S.reg.find(function(r){return r.handle===k.handle;});if(!ex)S.reg.push({handle:k.handle,name:k.name||'',platform:k.platform||'',market:k.market||'',followers:k.followers||'',niche:k.niche||'',email:'',hasExistingDeal:!!k.hasExistingDeal,currentExchange:k.currentExchange||'',status:'nuevo',foundAt:today,contactedAt:'',repliedAt:'',notes:'',score:k.score||null});});
+    S.saveReg();
+    if(!results.length){if(el)el.innerHTML='<div class="emst">No se encontraron KOLs con esos filtros. Prueba otros mercados o nichos.</div>';return;}
+    if(el)el.innerHTML=results.map(function(k,i){return renderKolCard(k,i);}).join('');
+    if(hdr){hdr.style.display='block';hdr.textContent=results.length+' KOLs encontrados de '+d.total+' en base de datos · Ordenados por puntaje IA';}
+    rdDash();
+  }catch(err){if(el)el.innerHTML='<div class="emst" style="color:var(--red);">Error: '+err.message+'</div>';}
+}
+
+function addToCRM2(idx){
+  var k=P.results[idx];if(!k)return;
+  var today=new Date().toLocaleDateString('es-CO');
+  var ex=S.reg.find(function(r){return r.handle===k.handle;});
+  if(!ex){S.reg.push({handle:k.handle,name:k.name||'',platform:k.platform||'',market:k.market||'',followers:k.followers||'',niche:k.niche||'',email:'',hasExistingDeal:!!k.hasExistingDeal,currentExchange:k.currentExchange||'',status:'nuevo',foundAt:today,contactedAt:'',repliedAt:'',notes:'Score: '+(k.score||'?')});S.saveReg();}
+  var card=document.getElementById('kc2_'+idx);
+  if(card){var btn=card.querySelector('.kbtn-add');if(btn){btn.textContent='✓ En CRM';btn.style.color='var(--green)';btn.disabled=true;}}
+  rdDash();
+}
+
+function markContacted2(idx){
+  var k=P.results[idx];if(!k)return;
+  var via=prompt('Como fue el contacto? (DM Twitter, Telegram, Email...)','DM Twitter');
+  if(!via)return;
+  var today=new Date().toLocaleDateString('es-CO');
+  var ri=S.reg.findIndex(function(r){return r.handle===k.handle;});
+  if(ri>=0){S.reg[ri].status='contactado';if(!S.reg[ri].contactedAt)S.reg[ri].contactedAt=today;S.reg[ri].notes=(S.reg[ri].notes?S.reg[ri].notes+' | ':'')+via+': '+today;}
+  else{S.reg.push({handle:k.handle,name:k.name||'',platform:k.platform||'',market:k.market||'',followers:k.followers||'',niche:k.niche||'',email:'',hasExistingDeal:!!k.hasExistingDeal,currentExchange:k.currentExchange||'',status:'contactado',foundAt:today,contactedAt:today,repliedAt:'',notes:via+': '+today,score:k.score||null});}
+  S.saveReg();
+  runProspectorSearch();rdDash();
+}
+
+async function searchOpportunities(){
+  var market=document.getElementById('opp-market')?.value||'global';
+  var el=document.getElementById('opp-results');
+  if(el)el.innerHTML='<div class="emst"><span class="spin"></span> Buscando con compound-beta...</div>';
+  try{
+    var r=await fetch(API_BASE+'/api/lookup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({handle:'crypto KOL '+market+' complaining about Binance Bybit exchange futures',platform:'Twitter',_mode:'opportunities'})});
+    var d=await r.json();
+    if(el)el.innerHTML='<div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--r2);padding:1rem;">'
+      +'<div style="font-weight:600;margin-bottom:8px;">Busca manualmente en Twitter:</div>'
+      +'<code style="display:block;background:var(--s1);padding:8px;border-radius:var(--r);font-size:11px;margin-bottom:8px;">(crypto OR bitcoin) (futures OR leverage) (Binance OR Bybit) (fees OR problems OR leaving) lang:en</code>'
+      +'<div style="font-size:11px;color:var(--muted);">Esta busqueda en Twitter encuentra KOLs con quejas activas. Copia el handle y agregalo via + Agregar KOL.</div>'
+      +'<a href="https://x.com/search?q=(crypto+OR+bitcoin)+(futures+OR+leverage)+(Binance+OR+Bybit)+(fees+OR+problems+OR+leaving)&f=live" target="_blank" class="btn bg" style="margin-top:10px;display:inline-block;font-size:12px;">Abrir busqueda en Twitter ↗</a>'
+      +'</div>';
+  }catch(e){if(el)el.innerHTML='<div class="emst" style="color:var(--red);">'+e.message+'</div>';}
+}
+
 window.onload=function(){
   var now=new Date(),h=now.getHours();
   var g=h<12?'Buenos dias':h<19?'Buenas tardes':'Buenas noches';
