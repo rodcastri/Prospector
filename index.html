@@ -862,12 +862,15 @@ function platUrl(platform,handle){var h=(handle||'').replace('@','');var p=(plat
 function getContactStatus(handle){if(!S.reg)return null;return S.reg.find(function(r){return r.handle===handle;})||null;}
 
 function renderKolCard(k,idx){
+  // Use verified URL from DB if available, otherwise build it
+  var url=k.url||(k.platform&&k.platform.toLowerCase().includes('youtube')?'https://youtube.com/@'+(k.handle||'').replace('@',''):k.platform&&k.platform.toLowerCase().includes('twitter')?'https://x.com/'+(k.handle||'').replace('@',''):'#');
   var ct=getContactStatus(k.handle);
   var isC=ct&&ct.status!=='nuevo';
-  var url=platUrl(k.platform,k.handle);
+  /* url already set above */
   var sc=k.score||5;
   var engNum=parseFloat(k.engagement||'0');
   var engColor=engNum>=10?'var(--green)':engNum>=7?'var(--amber)':'var(--muted)';
+  var verifiedBadge=k.verified?'<span class="kbadge" style="background:rgba(96,165,250,0.08);color:var(--blue);border-color:rgba(96,165,250,0.25);">✓ Verificado</span>':'<span class="kbadge" style="background:rgba(248,113,113,0.08);color:var(--red);border-color:rgba(248,113,113,0.2);">⚠ Sin verificar</span>';
   var dealBadge=k.hasExistingDeal
     ?'<span class="kbadge" style="background:rgba(251,191,36,0.1);color:var(--amber);border-color:rgba(251,191,36,0.25);">Deal: '+k.currentExchange+'</span>'
     :'<span class="kbadge" style="background:rgba(127,255,106,0.08);color:var(--green);border-color:rgba(127,255,106,0.25);">Sin acuerdo</span>';
@@ -880,7 +883,7 @@ function renderKolCard(k,idx){
     +'<div style="font-size:11px;"><span style="color:var(--dim);">Seg</span> <b>'+k.followers+'</b></div>'
     +'<div style="font-size:11px;"><span style="color:var(--dim);">Eng</span> <b style="color:'+engColor+'">'+k.engagement+'</b></div></div>'
     +'<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">'+((k.niche||'').toUpperCase())+' · '+(k.market||k.flag||'')+'</div>'
-    +'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">'+dealBadge+cBadge+'</div>'
+    +'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">'+verifiedBadge+dealBadge+cBadge+'</div>'
     +'<div style="font-size:10px;color:var(--dim);line-height:1.4;margin-bottom:10px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">'+(k.reason||'')+'</div>'
     +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
     +'<a href="'+url+'" target="_blank" class="kbtn-sm kbtn-primary">Ver perfil ↗</a>'
