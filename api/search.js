@@ -27,7 +27,7 @@ export default async function handler(req, res) {
   const results = [];
   const seen = new Set();
 
-  // ── YOUTUBE DATA API v3 ──────────────────────────────────────────────────
+  // ââ YOUTUBE DATA API v3 ââââââââââââââââââââââââââââââââââââââââââââââââââ
   if (YT_KEY && (!platforms.length || platforms.includes('YouTube'))) {
     for (const query of queries.slice(0,3)) {
       try {
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
             contentType: types,
             hasExistingDeal: hasDeal,
             currentExchange: exchName,
-            reason: subsF+' subscribers · '+engRate+'% engagement'+( hasDeal?' · Deal '+exchName+' (switchable)':' · No exchange deal'),
+            reason: subsF+' subscribers Â· '+engRate+'% engagement'+( hasDeal?' Â· Deal '+exchName+' (switchable)':' Â· No exchange deal'),
             verified: true,
             source:'youtube_api'
           });
@@ -93,7 +93,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // ── APIFY TWITTER ────────────────────────────────────────────────────────
+  // ââ APIFY TWITTER ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   if (APIFY_TOKEN && APIFY_TOKEN !== 'PENDING' && (!platforms.length || platforms.includes('Twitter'))) {
     for (const query of queries.slice(0,2)) {
       try {
@@ -132,7 +132,7 @@ export default async function handler(req, res) {
             engagement: '6.0%',
             niche: types[0], contentType: types,
             hasExistingDeal: hasDeal, currentExchange: exchName,
-            reason: flwF+' followers on Twitter'+( hasDeal?' · Deal '+exchName+' (can switch)':' · No exchange deal'),
+            reason: flwF+' followers on Twitter'+( hasDeal?' Â· Deal '+exchName+' (can switch)':' Â· No exchange deal'),
             verified: true, source:'apify_twitter'
           });
         }
@@ -162,4 +162,4 @@ export default async function handler(req, res) {
   });
 }
 
-function getFlag(cc){const f={US:'🇺🇸',GB:'🇬🇧',NG:'🇳🇬',IN:'🇮🇳',VN:'🇻🇳',ID:'🇮🇩',PH:'🇵🇭',PK:'🇵🇰',TR:'🇹🇷',DE:'🇩🇪',FR:'🇫🇷',BR:'🇧🇷'};return f[cc]||'🌐';}
+function getFlag(cc){const f={US:'ðºð¸',GB:'ð¬ð§',NG:'ð³ð¬',IN:'ð®ð³',VN:'ð»ð³',ID:'ð®ð©',PH:'ðµð­',PK:'ðµð°',TR:'ð¹ð·',DE:'ð©ðª',FR:'ð«ð·',BR:'ð§ð·'};return f[cc]||'ð';}
